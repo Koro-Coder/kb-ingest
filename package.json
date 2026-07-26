@@ -1,0 +1,16 @@
+{
+  "name": "kb-ingest",
+  "version": "1.0.0",
+  "description": "Admin tool: register GitHub repos of LaTeX question banks and sync them into the shared knowledge base",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --env-file=.env server/index.js",
+    "dev": "node --env-file=.env --watch server/index.js",
+    "test": "node --test server/**/*.test.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

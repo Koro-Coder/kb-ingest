@@ -1,0 +1,158 @@
+\NAT{7}{2026}{1}{2}{0.55-0.58}{Starting with the first approximation as $x = 0.5$, the second approximation for the root of the following function by the Newton-Raphson method is \text{\NATBox} (rounded off to two decimal places).
+    $$f(x) = e^{-x} - x$$
+}
+
+\NAT{7}{2026}{2}{2}{2}{Values of $y$ for different values of $x$ are tabulated below.
+    \begin{center}
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            $x$ & $-2$ & $1$ & $2$ \\ \hline
+            $y$ & $28$ & $4$ & $16$ \\ \hline
+        \end{tabular}
+    \end{center}
+    If a second-degree interpolating polynomial $P_2(x)$ is used to represent $y$, the value of $P_2(0)$ is \text{\NATBox} (rounded off to the nearest integer).
+}
+
+\MCQ{7}{2026}{3}{1}{A}{A fifth-degree polynomial in $x$ is defined for $x > 0$. All coefficients of the polynomial are positive. The first derivative of the polynomial is obtained numerically at a point by using the first-order forward as well as the first-order backward difference methods. Identical step lengths are used for both the methods.
+\\ Following statements are made.
+    \begin{itemize}
+        \item[(I)] Forward difference method underestimates the true derivative.
+        \item[(II)] Backward difference method overestimates the true derivative.
+    \end{itemize}
+
+    Which one of the following options is CORRECT?
+    \begin{choices}
+        \Option {Both statements (I) and (II) are FALSE.}
+        \Option {Both statements (I) and (II) are TRUE.}
+        \Option {Statement (I) is TRUE and statement (II) is FALSE.}
+        \Option {Statement (I) is FALSE and statement (II) is TRUE.}
+    \end{choices}
+}
+\NAT{7}{2025}{1}{2}{2.4-2.8}{Consider the differential equation given below. Using the Euler method with the step size ($h$) of $0.5$, the value of $y$ at $x = 1.0$ is equal to \text{\NATBox} (rounded off to 1 decimal place).
+    $$\frac{dy}{dx} = y + 2x - x^2; y(0) = 1 \quad (0 \le x < \infty)$$
+}
+\MCQ{7}{2024}{1}{1}{A}{The second derivative of a function $f$ is computed using the fourth-order Central Divided Difference method with a step length $h$. The CORRECT expression for the second derivative is
+\begin{choices}
+    \Option{$\dfrac{1}{12h^2} [-f_{i+2} + 16f_{i+1} - 30f_i + 16f_{i-1} - f_{i-2}]$}
+    \Option{$\dfrac{1}{12h^2} [f_{i+2} + 16f_{i+1} - 30f_i + 16f_{i-1} - f_{i-2}]$}
+    \Option{$\dfrac{1}{12h^2} [-f_{i+2} + 16f_{i+1} - 30f_i + 16f_{i-1} + f_{i-2}]$}
+    \Option{$\dfrac{1}{12h^2} [-f_{i+2} - 16f_{i+1} + 30f_i - 16f_{i-1} - f_{i-2}]$}
+\end{choices}
+}
+
+\NAT{7}{2024}{2}{1}{0.16-0.18}{Consider the data of $f(x)$ given in the table.
+    \begin{center}
+        \begin{tabular}{|c|c|c|c|}
+            \hline
+            \rowcolor[HTML]{0000FF} 
+            {\color[HTML]{FFFFFF} \textbf{$i$}} & {\color[HTML]{FFFFFF} \textbf{0}} & {\color[HTML]{FFFFFF} \textbf{1}} & {\color[HTML]{FFFFFF} \textbf{2}} \\ \hline
+            $x_i$ & 1 & 2 & 3 \\ \hline
+            $f(x_i)$ & 0 & 0.3010 & 0.4771 \\ \hline
+        \end{tabular}
+    \end{center}
+    The value of $f(1.5)$ estimated using second-order Newton's interpolation formula is \text{\NATBox} (rounded off to 2 decimal places).
+}
+\MCQ{7}{2023}{1}{2}{A}{A function $f(x)$, that is smooth and convex-shaped between interval $(x_l, x_u)$ is shown in the figure. This function is observed at odd number of regularly spaced points. If the area under the function is computed numerically, then.
+\QuestionFigure[0.5\textwidth]{chapters/ch7_numerical_methods/img/CE/Q5_23.jpg}
+        \begin{choices}
+        \Option {the numerical value of the area obtained using the trapezoidal rule will be less than the actual}
+        \Option {the numerical value of the area obtained using the trapezoidal rule will be more than the actual}
+        \Option {the numerical value of the area obtained using the trapezoidal rule will be exactly equal to the actual}
+        \Option {with the given details, the numerical value of area cannot be obtained using trapezoidal rule}
+    \end{choices}
+}
+\NAT{7}{2022}{1}{1}{3.1-3.2}{Consider the following recursive iteration scheme for different values of variable $P$ with the initial guess $x_1 = 1$:
+    $$x_{n+1} = \frac{1}{2} \left( x_n + \frac{P}{x_n} \right), n = 1, 2, 3, 4, 5$$
+    For $P = 2$, $x_5$ is obtained to be $1.414$, rounded-off to three decimal places. For $P = 3$, $x_5$ is obtained to be $1.732$, rounded-off to three decimal places. If $P = 10$, the numerical value of $x_5$ is \text{\NATBox} (round off to three decimal places).
+}
+\NAT{7}{2017}{1}{2}{8}{Consider the equation $\frac{du}{dt} = 3t^2 + 1$ with $u = 0$ at $t = 0$. This is numerically solved by using the forward Euler method with a step size $\Delta t = 2$. The absolute error in the solution at the end of the first time step is \text{\NATBox}.
+}
+
+\NAT{7}{2016}{1}{2}{0.3601}{Newton-Raphson method is to be used to find root of equation $3x - e^x + \sin x = 0$. If the initial trial value for the root is taken as $0.333$, the next approximation for the root would be \text{\NATBox} (note: answer up to three decimal).
+}
+\MCQ{7}{2016}{2}{1}{B}{The quadratic approximation of $f(x) = x^3 - 3x^2 - 5$ at the point $x = 0$ is
+    \InlineOptions{$3x^2 - 6x - 5$}{$-3x^2 - 5$}{$-3x^2 + 6x - 5$}{$3x^2 - 5$}
+}
+\NAT{7}{2015}{1}{2}{1.367}{For step-size, $\Delta x = 0.4$, the value of following integral using Simpson's $1/3$ rule is \text{\NATBox}.
+\\
+\[\int_{0}^{0.8} \left( 0.2 + 25x - 200x^2 + 675x^3 - 900x^4 + 400x^5 \right) dx \]
+}
+
+\NAT{7}{2015}{2}{2}{0.33}{In Newton-Raphson iterative method, the initial guess value ($x_{ini}$) is considered as zero while finding the roots of the equation:
+    $$f(x) = -2 + 6x - 4x^2 + 0.5x^3$$
+    The correction, $\Delta x$, to be added to $x_{ini}$ in the first iteration is \text{\NATBox}.
+}
+
+\MCQ{7}{2015}{3}{2}{A}{The integral $\int_{x_1}^{x_2} x^2 \, dx$ with $x_2 > x_1 > 0$ is evaluated analytically as well as numerically using a single application of the trapezoidal rule. If $I$ is the exact value of the integral obtained analytically and $J$ is the approximate value obtained using the trapezoidal rule, which of the following statements is correct about their relationship?
+\begin{choices}
+    \Option{J > I}
+    \Option{J < I}
+    \Option{J = I}
+    \Option{Insufficient data to determine the relationship}
+\end{choices}
+}
+
+\NAT{7}{2015}{4}{2}{2.33}{The quadratic equation $x^2 - 4x + 4 = 0$ is to be solved numerically, starting with the initial guess $x_0 = 3$. The Newton-Raphson method is applied once to get a new estimate and then the Secant method is applied once using in the initial guess and this new estimate. The estimated value of the root after the application of the Secant method is \text{\NATBox}.
+}
+\NAT{7}{2013}{1}{2}{0.5}{There is no value of $x$ that can simultaneously satisfy both the given equations. Therefore, find the 'least squares error' solution to the two equations, i.e., find the value of $x$ that minimizes the sum of squares of the errors in the two equations:
+    $$2x = 3$$
+    $$4x = 1$$
+}
+
+\MCQ{7}{2012}{1}{1}{D}{The estimate of $\int_{0.5}^{1.5} \frac{dx}{x}$ obtained using Simpson's rule with three-point function evaluation exceeds the exact value by
+    \InlineOptionsOneLine{0.235}{0.068}{0.024}{0.012}
+}
+
+\MCQ{7}{2011}{1}{2}{A}{The square root of a number $N$ is to be obtained by applying the Newton -- Raphson iteration to the equation $x^2 - N = 0$. If $i$ denotes the iteration index, the correct iterative scheme will be
+\InlineOptions{$x_{i+1} = \dfrac{1}{2} \left[ x_i + \frac{N}{x_i} \right]$}{$x_{i+1} = \dfrac{1}{2} \left[ x_i^2 - \frac{N}{x_i^2} \right]$}{$x_{i+1} = \dfrac{1}{2} \left[ x_i + \frac{N^2}{x_i} \right]$}{$x_{i+1} = \dfrac{1}{2} \left[ x_i - \frac{N}{x_i} \right]$}
+}
+
+\MCQ{7}{2010}{1}{2}{A}{The table below gives values of a function $f(x)$ obtained for values of $x$ at intervals of $0.25$
+    \begin{center}
+        \begin{tabular}{|c|c|c|c|c|c|}
+            \hline
+            $\mathbf{X}$ & 0 & 0.25 & 0.50 & 0.75 & 1 \\ \hline
+            $\mathbf{F(x)}$ & 1 & 0.9412 & 0.88 & 0.64 & 0.5 \\ \hline
+        \end{tabular}
+    \end{center}
+    The value of the integral of the function between the limits $0$ to $1$, using Simpson's rule is
+    \InlineOptionsOneLine{0.7854}{2.3562}{3.1416}{7.5000}
+}
+
+\MCQ{7}{2009}{1}{2}{C}{The area under the curve shown between $x = 1$ and $x = 3$ is to be evaluated using the trapezoidal rule. The following points on the curve are given
+    \begin{center}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            \textbf{Point} & \textbf{X -- coordinate (m)} & \textbf{Y -- coordinate (m)} \\ \hline
+            1 & 1 & 1 \\ \hline
+            2 & 2 & 4 \\ \hline
+            3 & 3 & 9 \\ \hline
+        \end{tabular}
+    \end{center}
+   \QuestionFigure[0.35\textwidth]{chapters/ch7_numerical_methods/img/CE/Q5_09.png}
+
+    The evaluated area (in $\text{m}^2$) will be
+    \InlineOptionsOneLine{7}{8.67}{9}{18}
+}
+
+\MCQ{7}{2008}{1}{1}{C}{The Newton-Raphson iteration $x_{n+1} = \frac{1}{2} \left( x_n + \frac{R}{x_n} \right)$ can be used to compute
+\InlineOptions{square of $R$}{reciprocal of $R$}{square root of $R$}{logarithm of $R$}
+}
+\MCQ{7}{2008}{2}{2}{D}{If the interval of integration is divided into two equal intervals of width $1.0$, the value of the definite integral $\int_{1}^{3} \log_{e}x \, dx$ using simpson's one -- third rule will be
+    \InlineOptionsOneLine{0.5}{0.80}{1.00}{0.29}
+}
+\MCQ{7}{2007}{1}{1}{A}{The following equation needs to be numerically solved using the Newton -- Raphson method $x^3 + 4x - 9 = 0$. The iterative equation for this purpose is ($k$ indicates the iteration level)
+\InlineOptions{$X_{k+1} = \dfrac{2X_k^3+9}{3X_k^2+4}$}{$X_{k+1} = \dfrac{3X_k^3+9}{2X_k^2+9}$}{$X_{k+1} = X_k - 3_k^2 + 4$}{$X_{k+1} = \frac{4X_k^2+3}{9X_k^2+2}$}
+}
+
+\MCQ{7}{2007}{2}{1}{A}{Given that one root of the equation $x^3 - 10x^2 + 31x - 30 = 0$ is $5$ then other roots are
+    \InlineOptions{2 and 3}{2 and 4}{3 and 4}{-2 and -3}
+}
+\MCQ{7}{2005}{1}{2}{B}{Given $a > 0$, we wish to calculate its reciprocal value $\frac{1}{a}$ by using Newton - Raphson method for $f(x) = 0$. For $a = 7$ and starting with $x_0 = 0.2$ the first two iterations will be
+    \InlineOptions{0.11, 0.1299}{0.12, 0.1392}{0.12, 0.1416}{0.13, 0.1428}
+}
+
+\MCQ{7}{2005}{2}{1}{C}{Given $a > 0$, we wish to calculate its reciprocal value $\frac{1}{a}$ by using Newton - Raphson method for $f(x) = 0$. The Newton - Raphson algorithm for the function will be
+\InlineOptions{$X_{k+1} = \dfrac{1}{2} \left( X_k + \dfrac{a}{X_k} \right)$}{$X_{k+1} = X_k + \dfrac{a}{2} X_k^2$}{$X_{k+1} = 2X_k - aX_k^2$}{$X_{k+1} = 2X_k - \dfrac{a}{2} X_k^2$}
+}
+
