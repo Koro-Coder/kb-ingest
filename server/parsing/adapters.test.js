@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
-const { parseQuestions } = require('./texTokenizer');
+const { parseQuestions, parseSolutions } = require('./texTokenizer');
 const maths = require('./adapters/maths');
 const technical = require('./adapters/technical');
 const aptitude = require('./adapters/aptitude');
@@ -546,4 +546,133 @@ test('every documented option style is recognized, with no warning', () => {
   const { questions: imageQuestions } = parseQuestions(styles['image options'], technical, { chapterFolder: '' });
   assert.equal(imageQuestions[0].options[0].images.length, 1);
   assert.equal(imageQuestions[0].options[0].images[0].src, 'img/a.png');
+});
+
+test('chapter-based solutions use the documented 8-argument spine', () => {
+  const tex = String.raw`\MCQSol{1}{2023}{4}{2}{A}{3}{https://youtu.be/v1}{
+Use series-parallel reduction.
+\[ R_{eq} = 4\,\Omega \]
+\[ \boxed{4\,\Omega} \]
+\KeyPoints{
+\begin{itemize}
+  \item Parallel: product-over-sum.
+  \item Series: direct summation.
+\end{itemize}
+}
+\MistakesToAvoid{
+\begin{itemize}
+  \item Do not mix the formulas.
+\end{itemize}
+}
+}`;
+  const { solutions, warnings } = parseSolutions(tex, technical, { chapterFolder: '' });
+
+  assert.equal(warnings.length, 0);
+  assert.equal(solutions.length, 1);
+  const s = solutions[0];
+  assert.equal(s.solutionType, 'MCQSol');
+  assert.equal(s.questionNum, 4);
+  assert.equal(s.year, 2023);
+  assert.equal(s.marks, '2');
+  assert.equal(s.answer, 'A');
+  assert.equal(s.difficulty, '3');
+  assert.equal(s.video, 'https://youtu.be/v1');
+
+  const keypoints = s.body.find((n) => n.type === 'keypoints');
+  assert.ok(keypoints, 'expected a Key Points block');
+  const kpList = keypoints.content.find((n) => n.type === 'list');
+  assert.ok(kpList, 'Key Points must keep its list structure, not flatten to prose');
+  assert.equal(kpList.items.length, 2);
+
+  const mistakes = s.body.find((n) => n.type === 'mistakes');
+  assert.ok(mistakes, 'expected a Mistakes to Avoid block');
+});
+
+test('aptitude solutions use the 7-argument form (no chapter) and resolve session-relative figures', () => {
+  const tex = String.raw`\MCQSol{2021}{2}{1}{B}{2}{}{%
+Reflect the word across the x-axis.
+\SolutionFigure[0.3\textwidth]{img/Q2_21.png}
+\[ \boxed{\text{B}} \]
+}`;
+  const { solutions, warnings } = parseSolutions(tex, aptitude, { chapterFolder: '2021/Session1' });
+
+  assert.equal(warnings.length, 0);
+  assert.equal(solutions.length, 1);
+  const s = solutions[0];
+  assert.equal(s.year, 2021, 'year is the FIRST argument for aptitude, not the second');
+  assert.equal(s.questionNum, 2);
+  assert.equal(s.marks, '1');
+  assert.equal(s.answer, 'B');
+  assert.equal(s.difficulty, '2');
+  assert.equal(s.video, '');
+
+  const image = s.body.find((n) => n.type === 'image');
+  assert.ok(image, '\\SolutionFigure must become an image node');
+  assert.equal(image.src, '2021/Session1/img/Q2_21.png');
+});
+
+test('\\Method blocks are kept as separate labelled sections', () => {
+  const tex = String.raw`\MCQSol{1}{2020}{11}{1}{B}{2}{}{
+\Method{1}{\[ I = \frac{10}{5} = 2 \]}
+\Method{2}{\[ I = \frac{P}{V} = 2 \]}
+\[ \boxed{2\,\text{A}} \]
+}`;
+  const { solutions } = parseSolutions(tex, technical, { chapterFolder: '' });
+  const methods = solutions[0].body.filter((n) => n.type === 'method');
+  assert.equal(methods.length, 2);
+  assert.deepEqual(methods.map((m) => m.label), ['1', '2']);
+});
+
+test('each adapter offers the right mirrored solution-file candidates', () => {
+  assert.ok(aptitude.solutionPathCandidates('2021/Session1/common.tex').includes('2021/Session1/sol.tex'));
+  assert.ok(
+    maths
+      .solutionPathCandidates('chapters/ch7_numerical_methods/ce.tex')
+      .includes('chapters/ch7_numerical_methods/sol_CE.tex')
+  );
+
+  // Technical repos disagree on the suffix, so BOTH forms must be offered:
+  // Network Theory EE appends "_solutions", Machines EE / Digital EC do not.
+  const technicalCandidates = technical.solutionPathCandidates('chapters/ch1_Magnetic_circuits.tex');
+  assert.ok(technicalCandidates.includes('solutions/ch1_Magnetic_circuits_solutions.tex'));
+  assert.ok(technicalCandidates.includes('solutions/ch1_Magnetic_circuits.tex'));
+
+  assert.deepEqual(
+    aptitude.solutionPathCandidates('frontmatter/preface.tex'),
+    [],
+    'non-question files have no solution'
+  );
+});
+
+test('solutions must be joined on year AND question number, not number alone', () => {
+  // A chapter file spans many years and restarts numbering each year, so Q1
+  // exists once per year. Matching on questionNum alone silently returns the
+  // wrong year's solution.
+  const tex = String.raw`\MCQSol{1}{2025}{1}{2}{A,D}{2}{}{Solution for 2025 Q1. \[ \boxed{AD} \]}
+\MCQSol{1}{2021}{1}{1}{A}{1}{}{Solution for 2021 Q1. \[ \boxed{A} \]}`;
+  const { solutions } = parseSolutions(tex, technical, { chapterFolder: '' });
+
+  assert.equal(solutions.length, 2);
+  assert.ok(
+    solutions.every((s) => s.questionNum === 1),
+    'both solutions share question number 1 — only the year separates them'
+  );
+
+  const for2021 = solutions.find((s) => s.questionNum === 1 && s.year === 2021);
+  const for2025 = solutions.find((s) => s.questionNum === 1 && s.year === 2025);
+  assert.equal(for2021.answer, 'A');
+  assert.equal(for2025.answer, 'A,D');
+});
+
+test('aptitude question ids normalise the subject code to a chapter number', () => {
+  // The 2021-2026 repos write \MCQ{GA}{...}; the 2010-2014 repos write
+  // \MCQ{1}{...}. Both must print as 1.YY.n so ids are consistent everywhere.
+  const gaStyle = String.raw`\MCQ{GA}{2021}{1}{1}{D}{Question text.\InlineOptionsOneLine{A}{B}{C}{D}}`;
+  const numericStyle = String.raw`\MCQ{1}{2014}{3}{1}{A}{Question text.\InlineOptionsOneLine{A}{B}{C}{D}}`;
+
+  const { questions: ga } = parseQuestions(gaStyle, aptitude, { chapterFolder: '2021/Session1' });
+  const { questions: numeric } = parseQuestions(numericStyle, aptitude, { chapterFolder: '2014/Session1' });
+
+  assert.equal(ga[0].questionId, '1.21.1');
+  assert.equal(numeric[0].questionId, '1.14.3');
 });

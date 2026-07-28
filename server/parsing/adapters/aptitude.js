@@ -66,9 +66,33 @@ async function discoverHierarchy({ files }) {
   return { hierarchy, files: fileEntries };
 }
 
+// Aptitude solution files sit beside their question file in the same
+// {Year}/Session{N}/ folder, named sol.tex rather than common.tex.
+function solutionPathCandidates(questionPath) {
+  if (!/\/(common|main)\.tex$/i.test(questionPath)) {
+    return [];
+  }
+  const folder = questionPath.replace(/\/(common|main)\.tex$/i, '');
+  return [`${folder}/sol.tex`, `${folder}/solutions.tex`, `${folder}/common.tex`];
+}
+
+// Aptitude repos disagree on the first macro argument: the 2010-2014 books
+// write \MCQ{1}{...} while the 2021-2026 books write \MCQ{GA}{...}. Both mean
+// the same single "General Aptitude" chapter, so the printed id is normalised
+// to 1 and stays consistent with every other subject (1.21.1, not GA.21.1).
+function questionIdPrefix(fields) {
+  const numeric = Number(String(fields.subjectCode).trim());
+  return Number.isFinite(numeric) ? String(numeric) : '1';
+}
+
 module.exports = {
   id: 'aptitude-session',
   argMap: ['subjectCode', 'year', 'questionNum', 'session', 'answer', 'content'],
+  // Aptitude drops the documented leading {chapter} argument — it has
+  // sessions, not chapters — so its solution macros take 7 arguments.
+  solutionArgMap: ['year', 'questionNum', 'marks', 'answer', 'difficulty', 'video', 'content'],
+  solutionPathCandidates,
+  questionIdPrefix,
   resolveImagePath,
   discoverHierarchy
 };

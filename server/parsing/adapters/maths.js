@@ -117,9 +117,25 @@ async function discoverHierarchy({ files, fetchText }) {
   return { hierarchy, files: fileEntries };
 }
 
+// chapters/ch7_numerical_methods/ce.tex -> chapters/ch7_numerical_methods/sol_CE.tex
+function solutionPathCandidates(questionPath) {
+  const match = /^(chapters\/[^/]+)\/([^/]+)\.tex$/.exec(questionPath);
+  if (!match) {
+    return [];
+  }
+  const [, folder, branch] = match;
+  return [
+    `${folder}/sol_${branch.toUpperCase()}.tex`,
+    `${folder}/sol_${branch}.tex`,
+    `${folder}/${branch}_solutions.tex`
+  ];
+}
+
 module.exports = {
   id: 'maths-chapter-branch',
   argMap: ['chapterNum', 'year', 'questionNum', 'marks', 'answer', 'content'],
+  solutionArgMap: ['chapterNum', 'year', 'questionNum', 'marks', 'answer', 'difficulty', 'video', 'content'],
+  solutionPathCandidates,
   resolveImagePath,
   discoverHierarchy
 };

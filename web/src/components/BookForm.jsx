@@ -14,7 +14,9 @@ const initialState = {
   branch: '',
   rootPath: '',
   branchName: '',
-  bookId: ''
+  bookId: '',
+  solutionRepoUrl: '',
+  solutionRootPath: ''
 };
 
 export default function BookForm({ onSubmit, submitting, error }) {
@@ -67,6 +69,16 @@ export default function BookForm({ onSubmit, submitting, error }) {
         </label>
       </div>
 
+      <label>
+        Solutions repo URL <span className="muted small">— optional; mirrors the question repo's folders</span>
+        <input
+          type="text"
+          placeholder="https://github.com/prepfusiongatepyq/..._Solutions_V1"
+          value={form.solutionRepoUrl}
+          onChange={update('solutionRepoUrl')}
+        />
+      </label>
+
       {form.subject === 'technical' && (
         <div className="row">
           <label>
@@ -90,6 +102,15 @@ export default function BookForm({ onSubmit, submitting, error }) {
               placeholder="e.g. Aptitude_2026_2021_V1 (blank = repo root)"
               value={form.rootPath}
               onChange={update('rootPath')}
+            />
+          </label>
+          <label>
+            Solutions root path
+            <input
+              type="text"
+              placeholder="(blank = solutions repo root)"
+              value={form.solutionRootPath}
+              onChange={update('solutionRootPath')}
             />
           </label>
           <label>

@@ -60,9 +60,32 @@ router.get('/:bookId', (req, res) => {
   }
 });
 
+// The org's solution-repo names don't follow one derivable rule
+// (Digital_Electronics_EC_V1 -> Digital_EC_Solutions_V1, but
+// Network_Theory_IN_V1 -> Network_Theory_IN_Solutions), so the admin supplies
+// it explicitly rather than us guessing.
+function parseSolutionRepo(url, solutionRootPath) {
+  if (!url || !String(url).trim()) {
+    return null;
+  }
+  const { owner, repo, branch } = github.parseRepoUrl(url);
+  return { owner, name: repo, branch: branch || null, rootPath: solutionRootPath || '' };
+}
+
 // Register (or re-register) a repo and run a full sync immediately.
 router.post('/', async (req, res) => {
-  const { repoUrl, subject, domain, branch, label, rootPath, branchName, bookId: requestedId } = req.body || {};
+  const {
+    repoUrl,
+    subject,
+    domain,
+    branch,
+    label,
+    rootPath,
+    branchName,
+    bookId: requestedId,
+    solutionRepoUrl,
+    solutionRootPath
+  } = req.body || {};
 
   if (!repoUrl || !subject) {
     res.status(400).json({ error: 'repoUrl and subject are required' });
@@ -87,6 +110,7 @@ router.post('/', async (req, res) => {
       branch,
       label: bookLabel,
       repo: { owner, name: repo, branch: branchName || branchFromUrl || null, rootPath: rootPath || '' },
+      solutionRepo: parseSolutionRepo(solutionRepoUrl, solutionRootPath),
       token: getToken()
     });
 
@@ -119,6 +143,11 @@ router.post('/:bookId/sync', async (req, res) => {
       branch: existing.branch,
       label: existing.label,
       repo: existing.repo,
+      // Re-sync keeps the stored solution repo, but also lets one be attached
+      // (or replaced) without re-registering the whole book.
+      solutionRepo: req.body && req.body.solutionRepoUrl
+        ? parseSolutionRepo(req.body.solutionRepoUrl, req.body.solutionRootPath)
+        : existing.solutionRepo || null,
       token: getToken()
     });
 

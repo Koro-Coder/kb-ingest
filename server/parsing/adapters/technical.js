@@ -59,9 +59,23 @@ async function discoverHierarchy({ files, fetchText, bookMeta }) {
   return { hierarchy, files: fileEntries };
 }
 
+// chapters/ch1_basic_concepts.tex -> solutions/ch1_basic_concepts[_solutions].tex
+// The suffix is not consistent across repos (Network Theory EE appends
+// "_solutions", Machines EE and Digital EC do not), so both are offered and
+// the caller picks whichever actually exists in the solutions repo.
+function solutionPathCandidates(questionPath) {
+  const match = /^chapters\/(.+)\.tex$/.exec(questionPath);
+  if (!match) {
+    return [];
+  }
+  return [`solutions/${match[1]}_solutions.tex`, `solutions/${match[1]}.tex`];
+}
+
 module.exports = {
   id: 'technical-chapter-file',
   argMap: ['chapterNum', 'year', 'questionNum', 'marks', 'answer', 'content'],
+  solutionArgMap: ['chapterNum', 'year', 'questionNum', 'marks', 'answer', 'difficulty', 'video', 'content'],
+  solutionPathCandidates,
   resolveImagePath,
   discoverHierarchy
 };

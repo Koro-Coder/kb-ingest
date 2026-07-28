@@ -456,6 +456,109 @@ function parseTabular(bodyText, context, resolveImagePath) {
   return rows.length ? { type: 'table', rows } : null;
 }
 
+const LIST_ENVIRONMENTS = new Set(['itemize', 'enumerate']);
+
+// Splits a list body on its top-level \item markers. "Top level" here also
+// means outside any *nested* list: a nested \begin{itemize} is left intact
+// inside its parent item, so parseInlineContent recurses into it naturally
+// and produces a nested list node.
+function splitListItems(text) {
+  const parts = [];
+  let current = '';
+  let depth = 0;
+  let envDepth = 0;
+  let inMath = false;
+  let started = false;
+  let i = 0;
+
+  while (i < text.length) {
+    if (text[i] === '\\') {
+      if (text.startsWith('\\begin', i)) {
+        const parsed = parseCommandArguments(text, i);
+        if (parsed.args[0] && LIST_ENVIRONMENTS.has(parsed.args[0])) {
+          envDepth += 1;
+        }
+        current += text.slice(i, parsed.nextIndex);
+        i = parsed.nextIndex;
+        continue;
+      }
+      if (text.startsWith('\\end', i)) {
+        const parsed = parseCommandArguments(text, i);
+        if (parsed.args[0] && LIST_ENVIRONMENTS.has(parsed.args[0])) {
+          envDepth -= 1;
+        }
+        current += text.slice(i, parsed.nextIndex);
+        i = parsed.nextIndex;
+        continue;
+      }
+      if (
+        text.startsWith('\\item', i) &&
+        !/[A-Za-z]/.test(text[i + 5] || '') &&
+        depth === 0 &&
+        envDepth === 0 &&
+        !inMath
+      ) {
+        if (started) {
+          parts.push(current);
+        }
+        started = true;
+        current = '';
+        i += 5;
+        continue;
+      }
+      if (text[i + 1] !== undefined && !/[A-Za-z]/.test(text[i + 1])) {
+        current += text.slice(i, i + 2);
+        i += 2;
+        continue;
+      }
+      current += text[i];
+      i += 1;
+      continue;
+    }
+
+    const ch = text[i];
+    if (ch === '$') {
+      inMath = !inMath;
+    } else if (!inMath && ch === '{') {
+      depth += 1;
+    } else if (!inMath && ch === '}') {
+      depth -= 1;
+    }
+    current += ch;
+    i += 1;
+  }
+
+  if (started) {
+    parts.push(current);
+  }
+  return parts;
+}
+
+// Converts a list body into a list node. An \item's optional argument is its
+// custom marker (\item[(I)] — common in "Statement (I)/(II)" questions), so
+// it is kept rather than folded into the item text.
+function parseList(envName, bodyText, context, resolveImagePath) {
+  const items = [];
+  for (const rawItem of splitListItems(bodyText)) {
+    let itemText = rawItem.replace(/^\s+/, '');
+    let label = null;
+    try {
+      const optional = readOptionalArgument(itemText, 0);
+      if (optional.value !== null) {
+        label = collapseWhitespace(optional.value);
+        itemText = itemText.slice(optional.nextIndex);
+      }
+    } catch (error) {
+      // Unbalanced '[' — treat it as ordinary item text rather than failing.
+    }
+    const { body } = parseInlineContent(itemText, context, resolveImagePath);
+    if (body.length > 0) {
+      items.push({ label, content: body });
+    }
+  }
+  return items.length ? { type: 'list', ordered: envName === 'enumerate', items } : null;
+}
+
 // Commands that carry no visible content of their own once digitized
 // (print-only layout hints, blank-answer rules, or preamble-style
 // declarations) — safe to drop silently, never warned about. Checked at
@@ -574,8 +677,28 @@ function parseInlineContent(content, context, resolveImagePath) {
       const { command, args, nextIndex } = parsed;
       const { base: commandBase } = splitStar(command);
 
-      if (['MCQ', 'MSQ', 'NAT'].includes(commandBase)) {
+      if (['MCQ', 'MSQ', 'NAT'].includes(commandBase) || SOLUTION_COMMANDS.includes(commandBase)) {
         break;
+      }
+      // Solution-only enhancement blocks. Each wraps real content that must
+      // render as its own labelled section, so they become block nodes rather
+      // than being unwrapped inline.
+      if (commandBase === 'Method') {
+        const braced = bracedArgs(parsed);
+        const { body: inner } = parseInlineContent(braced[1] || '', context, resolveImagePath);
+        body.push({ type: 'method', label: collapseWhitespace(braced[0] || ''), content: inner });
+        i = nextIndex;
+        continue;
+      }
+      if (commandBase === 'KeyPoints' || commandBase === 'MistakesToAvoid') {
+        const braced = bracedArgs(parsed);
+        const { body: inner } = parseInlineContent(braced[0] || '', context, resolveImagePath);
+        body.push({
+          type: commandBase === 'KeyPoints' ? 'keypoints' : 'mistakes',
+          content: inner
+        });
+        i = nextIndex;
+        continue;
       }
       if (commandBase in SYMBOL_COMMANDS) {
         pushText(body, SYMBOL_COMMANDS[commandBase]);
@@ -590,6 +713,7 @@ function parseInlineContent(content, context, resolveImagePath) {
       if (
         commandBase === 'QuestionFigure' ||
         commandBase === 'QuestionFigureNoNumber' ||
+        commandBase === 'SolutionFigure' ||
         commandBase === 'includegraphics'
       ) {
         const braced = bracedArgs(parsed);
@@ -625,6 +749,22 @@ function parseInlineContent(content, context, resolveImagePath) {
         recordContentLoss(context, 'begin{tabular}', content.slice(i, Math.min(skipTo, i + 160)));
         i = skipTo;
         continue;
+      }
+      if (commandBase === 'begin' && args[0] && LIST_ENVIRONMENTS.has(args[0])) {
+        // \begin{choices}/\Option is the option markup and is handled
+        // elsewhere; itemize/enumerate here are genuine prose lists (Key
+        // Points, "Statement (I)/(II)" question stems).
+        const env = readEnvironmentBody(content, args[0], nextIndex);
+        const list = env ? parseList(args[0], env.body, context, resolveImagePath) : null;
+        if (list) {
+          body.push(list);
+          i = env.nextIndex;
+          continue;
+        }
+        if (env) {
+          i = env.nextIndex;
+          continue;
+        }
       }
       if (commandBase === 'begin' || commandBase === 'end') {
         if (args[0] && UNRENDERABLE_ENVIRONMENTS.has(args[0])) {
@@ -722,6 +862,90 @@ function parseInlineContent(content, context, resolveImagePath) {
     }
   }
   return { body: normalizedBody, options };
+}
+
+// Solution macros, per the PrepFusion Solutions Manual. The documented spine
+// is 8 arguments {chapter}{year}{qno}{marks}{answer}{difficulty}{video}{body},
+// but Aptitude drops the leading chapter (it is organised by session, not
+// chapter) — so the arity comes from the adapter's solutionArgMap, not from
+// a constant here.
+const SOLUTION_COMMANDS = ['MCQSol', 'MSQSol', 'NATSol'];
+
+// Parses a solution file into solutions keyed by their question number. We
+// deliberately key on (file, questionNum) rather than the printed Q-id: the
+// Aptitude question ids omit the session, so they are not unique across a
+// book, whereas the solution file always mirrors exactly one question file.
+function parseSolutions(tex, adapter, fileContext = {}) {
+  const argMap = adapter.solutionArgMap;
+  const { resolveImagePath } = adapter;
+  const cleaned = stripComments(tex);
+  const context = { chapterFolder: '', contentLossCommands: new Map(), ...fileContext };
+  const solutions = [];
+  const warnings = [];
+  let i = 0;
+
+  while (i < cleaned.length) {
+    if (cleaned[i] !== '\\') {
+      i += 1;
+      continue;
+    }
+    const parsed = parseCommandArguments(cleaned, i);
+    const { command, nextIndex } = parsed;
+    const { base: commandBase } = splitStar(command);
+
+    if (!SOLUTION_COMMANDS.includes(commandBase)) {
+      i = nextIndex;
+      continue;
+    }
+
+    const braced = bracedArgs(parsed);
+    const raw = cleaned.slice(i, Math.min(nextIndex, i + 240));
+    try {
+      if (braced.length < argMap.length) {
+        throw new Error(
+          `Expected ${argMap.length} arguments for \\${command}, got ${braced.length} — solution skipped, verify the source`
+        );
+      }
+      const fields = {};
+      argMap.forEach((field, idx) => {
+        fields[field] = braced[idx];
+      });
+      // A stray extra argument pushes the body to the tail, same recovery as
+      // for questions.
+      if (braced.length > argMap.length) {
+        fields.content = braced[braced.length - 1];
+        warnings.push({
+          command,
+          message: `Expected ${argMap.length} arguments for \\${command}, got ${braced.length} — used the last argument as the solution body; verify by hand`,
+          raw,
+          excluded: false
+        });
+      }
+
+      const questionNum = Number(String(fields.questionNum).trim());
+      const year = Number(String(fields.year).trim());
+      if (!Number.isFinite(questionNum)) {
+        throw new Error(`Non-numeric question number ("${fields.questionNum}")`);
+      }
+
+      const { body } = parseInlineContent(fields.content || '', context, resolveImagePath);
+      solutions.push({
+        questionNum,
+        year: Number.isFinite(year) ? year : null,
+        solutionType: commandBase,
+        answer: fields.answer,
+        marks: fields.marks,
+        difficulty: fields.difficulty || '',
+        video: (fields.video || '').trim(),
+        body
+      });
+    } catch (error) {
+      warnings.push({ command, message: error.message, raw, excluded: true });
+    }
+    i = nextIndex;
+  }
+
+  return { solutions, warnings };
 }
 
 // Scans arbitrary text for every top-level invocation of \commandName{...}...
@@ -848,7 +1072,9 @@ function parseQuestions(tex, adapter, fileContext = {}) {
         // Aptitude layout — same rule, first argMap field stands in for
         // "chapter". Computed up front so every warning below can carry it,
         // which is what makes the exported warning list sortable per question.
-        const primaryField = fields[argMap[0]];
+        // Adapters may normalise the prefix when a subject's repos disagree on
+        // how they write it (see aptitude's GA vs 1).
+        const primaryField = adapter.questionIdPrefix ? adapter.questionIdPrefix(fields) : fields[argMap[0]];
         const yearTwoDigit = String(year).slice(-2).padStart(2, '0');
         const questionId = `${primaryField}.${yearTwoDigit}.${questionNum}`;
 
@@ -1045,5 +1271,7 @@ module.exports = {
   parseQuestions,
   findCommandInvocations,
   unescapeLatexText,
-  QUESTION_COMMANDS
+  parseSolutions,
+  QUESTION_COMMANDS,
+  SOLUTION_COMMANDS
 };

@@ -1,6 +1,6 @@
 const github = require('../github/client');
 const { getAdapter } = require('./adapters');
-const { parseQuestions } = require('./texTokenizer');
+const { parseQuestions, parseSolutions } = require('./texTokenizer');
 
 function slugifyBookId(input) {
   return String(input)
@@ -47,7 +47,7 @@ function checkImagesExist(questions, knownPaths) {
 // subject adapter discover the hierarchy + tex files, then parse every file
 // for question stubs (ordinal/type/year) and warnings. Returns the full
 // book document to be written by the caller via kbStore.
-async function syncBook({ bookId, subject, parserProfile, domain, branch, label, repo, token }) {
+async function syncBook({ bookId, subject, parserProfile, domain, branch, label, repo, solutionRepo, token }) {
   const adapter = getAdapter(parserProfile);
   const owner = repo.owner;
   const repoName = repo.name;
@@ -71,8 +71,31 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
   const bookMeta = { subject, domain: domain || null, branch: branch || null, label };
   const { hierarchy, files } = await adapter.discoverHierarchy({ files: texFiles, fetchText, bookMeta });
 
+  // A solution repo mirrors the question repo's directory tree, but the file
+  // names differ per subject (sol.tex / sol_CE.tex / *_solutions.tex), so the
+  // mapping comes from the adapter. Resolved once here so a missing repo just
+  // means "no solutions yet" rather than an error.
+  const solution = solutionRepo && solutionRepo.name ? { ...solutionRepo } : null;
+  let solutionPaths = new Set();
+  if (solution) {
+    solution.rootPath = String(solution.rootPath || '').replace(/^\/+|\/+$/g, '');
+    solution.branch = solution.branch || (await github.getDefaultBranch(solution.owner, solution.name, token));
+    const solTree = await github.getRepoTree(solution.owner, solution.name, solution.branch, token);
+    solutionPaths = new Set(
+      solution.rootPath
+        ? solTree.filter((p) => p.startsWith(`${solution.rootPath}/`)).map((p) => p.slice(solution.rootPath.length + 1))
+        : solTree
+    );
+  }
+
+  const fetchSolutionText = (relativePath) => {
+    const full = solution.rootPath ? `${solution.rootPath}/${relativePath}` : relativePath;
+    return github.getFileText(solution.owner, solution.name, solution.branch, full, token);
+  };
+
   let questionCount = 0;
   let warningCount = 0;
+  let solutionCount = 0;
   const fileResults = [];
 
   for (const fileEntry of files) {
@@ -100,7 +123,43 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
     });
     const allWarnings = warnings.concat(checkImagesExist(questions, knownPaths));
     questionCount += questions.length;
+
+    // Index which question numbers have a solution, so the website can show a
+    // "solution available" hint without fetching the solution file first.
+    let solutionPath = null;
+    let solvedNums = [];
+    if (solution && adapter.solutionPathCandidates) {
+      const candidate = adapter
+        .solutionPathCandidates(fileEntry.path)
+        .find((p) => solutionPaths.has(p));
+      if (candidate) {
+        solutionPath = candidate;
+        try {
+          const solTex = await fetchSolutionText(candidate);
+          const parsed = parseSolutions(solTex, adapter, {
+            chapterFolder: fileEntry.chapterFolder || '',
+            imgFolder: fileEntry.imgFolder || ''
+          });
+          // Keyed by year+number: chapter files restart question numbering
+          // each year, so the number alone would match the wrong solution.
+          solvedNums = parsed.solutions.map((s) => `${s.year}:${s.questionNum}`);
+          solutionCount += parsed.solutions.length;
+          for (const w of parsed.warnings) {
+            allWarnings.push({ ...w, message: `[solutions] ${w.message}` });
+          }
+        } catch (error) {
+          allWarnings.push({
+            command: null,
+            message: `[solutions] Failed to read ${candidate}: ${error.message}`,
+            raw: '',
+            excluded: true
+          });
+        }
+      }
+    }
+
     warningCount += allWarnings.length;
+    const solved = new Set(solvedNums);
 
     fileResults.push({
       fileId: fileEntry.fileId,
@@ -109,13 +168,16 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
       imgResolution: fileEntry.imgResolution,
       chapterFolder: fileEntry.chapterFolder || '',
       imgFolder: fileEntry.imgFolder || '',
-      questionCount:questions.length,
+      solutionPath,
+      solutionCount: solvedNums.length,
+      questionCount: questions.length,
       questions: questions.map((q) => ({
         ordinal: q.ordinal,
         questionId: q.questionId,
         questionType: q.questionType,
         starred: q.starred,
-        year: q.year
+        year: q.year,
+        hasSolution: solved.has(`${q.year}:${q.questionNum}`)
       })),
       warnings: allWarnings
     });
@@ -128,11 +190,15 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
     branch: branch || null,
     label,
     repo: { owner, name: repoName, branch: branchName, rootPath },
+    solutionRepo: solution
+      ? { owner: solution.owner, name: solution.name, branch: solution.branch, rootPath: solution.rootPath }
+      : null,
     parserProfile,
     hierarchy,
     files: fileResults,
     lastSyncedAt: new Date().toISOString(),
     questionCount,
+    solutionCount,
     warningCount
   };
 }
@@ -145,9 +211,11 @@ function bookToSummary(book) {
     branch: book.branch,
     label: book.label,
     repo: book.repo,
+    solutionRepo: book.solutionRepo || null,
     parserProfile: book.parserProfile,
     lastSyncedAt: book.lastSyncedAt,
     questionCount: book.questionCount,
+    solutionCount: book.solutionCount || 0,
     warningCount: book.warningCount
   };
 }

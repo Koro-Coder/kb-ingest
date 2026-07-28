@@ -77,6 +77,7 @@ export default function BookList({ books, onChanged }) {
           <th>Subject</th>
           <th>Domain / Branch</th>
           <th>Questions</th>
+          <th>Solutions</th>
           <th>Warnings</th>
           <th>Last synced</th>
           <th></th>
@@ -95,6 +96,17 @@ export default function BookList({ books, onChanged }) {
               <td>{b.subject}</td>
               <td>{[b.domain, b.branch].filter(Boolean).join(' · ') || '—'}</td>
               <td>{b.questionCount}</td>
+              <td>
+                {b.solutionRepo ? (
+                  // Anything short of full coverage is worth flagging, since a
+                  // question with no solution is a visible gap on the site.
+                  <span className={b.solutionCount < b.questionCount ? 'warn' : ''}>
+                    {b.solutionCount ?? 0}
+                  </span>
+                ) : (
+                  <span className="muted">—</span>
+                )}
+              </td>
               <td className={b.warningCount > 0 ? 'warn' : ''}>{b.warningCount}</td>
               <td className="small">{formatTime(b.lastSyncedAt)}</td>
               <td className="actions">
@@ -108,7 +120,7 @@ export default function BookList({ books, onChanged }) {
             </tr>
             {expandedId === b.bookId && (
               <tr className="detail-row">
-                <td colSpan={7}>
+                <td colSpan={8}>
                   {detailError && <p className="error">{detailError}</p>}
                   {!detailError && !detail && <p className="muted">Loading…</p>}
                   {detail && <BookDetail book={detail} />}
