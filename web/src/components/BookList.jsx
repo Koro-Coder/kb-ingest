@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { getBook, syncBook, deleteBook } from '../api.js';
 
 function formatTime(iso) {
@@ -143,6 +143,9 @@ function BookDetail({ book }) {
         Branch: <code>{book.repo?.branch}</code>
       </p>
       <p className="muted small">{book.files?.length || 0} tex files indexed.</p>
+
+      {book.solutionRepo && <VideoLinks book={book} />}
+
       {filesWithWarnings.length === 0 && <p className="muted">No parse warnings.</p>}
       {filesWithWarnings.length > 0 && (
         <div className="warnings">
@@ -166,6 +169,85 @@ function BookDetail({ book }) {
               </ul>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VideoLinks({ book }) {
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef(null);
+
+  const solvedCount = (book.files || []).reduce(
+    (sum, f) => sum + (f.questions || []).filter((q) => q.hasSolution).length,
+    0
+  );
+
+  const handleUpload = async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      const text = await file.text();
+      const res = await fetch(`/api/books/${book.bookId}/videos.csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/csv' },
+        body: text
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
+      setStatus(data);
+    } catch (error) {
+      setStatus({ errors: [error.message], applied: 0, cleared: 0, skipped: 0 });
+    } finally {
+      setBusy(false);
+      // Reset so re-uploading the same filename still fires a change event.
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="videos">
+      <div className="section-head">
+        <h4>Solution videos</h4>
+        <div className="actions">
+          <a className="button-link" href={`/api/books/${book.bookId}/videos.csv`} download>
+            Download video CSV
+          </a>
+          <button onClick={() => inputRef.current && inputRef.current.click()} disabled={busy}>
+            {busy ? 'Uploading…' : 'Upload filled CSV'}
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleUpload}
+            style={{ display: 'none' }}
+          />
+        </div>
+      </div>
+      <p className="muted small">
+        {solvedCount} solved question{solvedCount === 1 ? '' : 's'}. Fill the <code>Video URL</code> column and upload
+        the file back — links are stored here and survive re-syncs.
+      </p>
+      {status && (
+        <div className="upload-result">
+          <p>
+            <strong>{status.applied}</strong> link(s) set
+            {status.cleared > 0 && <> · <strong>{status.cleared}</strong> cleared</>}
+            {status.skipped > 0 && <> · <span className="warn">{status.skipped} skipped</span></>}
+            {typeof status.totalWithVideo === 'number' && <> · {status.totalWithVideo} total with a video</>}
+          </p>
+          {status.errors && status.errors.length > 0 && (
+            <ul className="upload-errors">
+              {status.errors.map((e, i) => (
+                <li key={i} className="warn">{e}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

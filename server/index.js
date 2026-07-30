@@ -5,6 +5,9 @@ const booksRouter = require('./routes/books');
 
 const app = express();
 app.use(express.json());
+// Video-link CSVs are posted back as raw text; a whole book's worth of rows
+// comfortably exceeds the default body limit.
+app.use(express.text({ type: 'text/csv', limit: '10mb' }));
 
 app.get('/health', (req, res) => {
   res.json({ ok: true, hasToken: Boolean(process.env.GITHUB_TOKEN) });

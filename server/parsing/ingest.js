@@ -127,7 +127,9 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
     // Index which question numbers have a solution, so the website can show a
     // "solution available" hint without fetching the solution file first.
     let solutionPath = null;
-    let solvedNums = [];
+    // key "year:questionNum" -> video URL from the LaTeX source ('' if none),
+    // so the exported CSV can pre-fill links that already exist upstream.
+    const solvedVideos = new Map();
     if (solution && adapter.solutionPathCandidates) {
       const candidate = adapter
         .solutionPathCandidates(fileEntry.path)
@@ -142,7 +144,9 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
           });
           // Keyed by year+number: chapter files restart question numbering
           // each year, so the number alone would match the wrong solution.
-          solvedNums = parsed.solutions.map((s) => `${s.year}:${s.questionNum}`);
+          for (const s of parsed.solutions) {
+            solvedVideos.set(`${s.year}:${s.questionNum}`, s.video || '');
+          }
           solutionCount += parsed.solutions.length;
           for (const w of parsed.warnings) {
             allWarnings.push({ ...w, message: `[solutions] ${w.message}` });
@@ -159,7 +163,6 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
     }
 
     warningCount += allWarnings.length;
-    const solved = new Set(solvedNums);
 
     fileResults.push({
       fileId: fileEntry.fileId,
@@ -169,16 +172,21 @@ async function syncBook({ bookId, subject, parserProfile, domain, branch, label,
       chapterFolder: fileEntry.chapterFolder || '',
       imgFolder: fileEntry.imgFolder || '',
       solutionPath,
-      solutionCount: solvedNums.length,
+      solutionCount: solvedVideos.size,
       questionCount: questions.length,
-      questions: questions.map((q) => ({
-        ordinal: q.ordinal,
-        questionId: q.questionId,
-        questionType: q.questionType,
-        starred: q.starred,
-        year: q.year,
-        hasSolution: solved.has(`${q.year}:${q.questionNum}`)
-      })),
+      questions: questions.map((q) => {
+        const key = `${q.year}:${q.questionNum}`;
+        return {
+          ordinal: q.ordinal,
+          questionId: q.questionId,
+          questionType: q.questionType,
+          starred: q.starred,
+          year: q.year,
+          questionNum: q.questionNum,
+          hasSolution: solvedVideos.has(key),
+          video: solvedVideos.get(key) || ''
+        };
+      }),
       warnings: allWarnings
     });
   }

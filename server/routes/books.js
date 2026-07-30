@@ -4,6 +4,8 @@ const kbStore = require('../store/kbStore');
 const { syncBook, slugifyBookId, bookToSummary } = require('../parsing/ingest');
 const { profileForSubject } = require('../parsing/adapters');
 const { buildWarningsCsv } = require('../warningsCsv');
+const { buildVideosCsv, applyVideosCsv } = require('../videosCsv');
+const videoStore = require('../store/videoStore');
 
 const router = express.Router();
 
@@ -40,6 +42,50 @@ router.get('/warnings.csv', (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+router.get('/:bookId/videos.csv', (req, res) => {
+  try {
+    const book = kbStore.readBook(req.params.bookId);
+    const videos = videoStore.readVideos(req.params.bookId);
+    sendCsv(res, `${req.params.bookId}-videos-${todayStamp()}.csv`, buildVideosCsv(book, videos));
+  } catch (error) {
+    res.status(404).json({ error: `Book not found: ${req.params.bookId}` });
+  }
+});
+
+// Re-upload of the same CSV with the "Video URL" column filled in. Body is
+// raw text/csv (see express.text in server/index.js) so no upload middleware
+// is needed.
+router.post('/:bookId/videos.csv', (req, res) => {
+  let book;
+  try {
+    book = kbStore.readBook(req.params.bookId);
+  } catch (error) {
+    res.status(404).json({ error: `Book not found: ${req.params.bookId}` });
+    return;
+  }
+
+  const csvText = typeof req.body === 'string' ? req.body : '';
+  if (!csvText.trim()) {
+    res.status(400).json({ error: 'Expected a CSV body (Content-Type: text/csv).' });
+    return;
+  }
+
+  const existing = videoStore.readVideos(req.params.bookId);
+  const result = applyVideosCsv(book, existing, csvText);
+
+  // Errors here are per-row and advisory; valid rows are still saved so one
+  // bad line doesn't discard an otherwise good upload.
+  videoStore.writeVideos(req.params.bookId, result.videos);
+
+  res.json({
+    applied: result.applied,
+    cleared: result.cleared,
+    skipped: result.skipped,
+    totalWithVideo: Object.keys(result.videos).length,
+    errors: result.errors.slice(0, 25)
+  });
 });
 
 router.get('/:bookId/warnings.csv', (req, res) => {
