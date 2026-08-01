@@ -70,67 +70,82 @@ export default function BookList({ books, onChanged }) {
   }
 
   return (
-    <table className="book-table">
-      <thead>
-        <tr>
-          <th>Book</th>
-          <th>Subject</th>
-          <th>Domain / Branch</th>
-          <th>Questions</th>
-          <th>Solutions</th>
-          <th>Warnings</th>
-          <th>Last synced</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {books.map((b) => (
-          <Fragment key={b.bookId}>
-            <tr className={busyId === b.bookId ? 'busy' : ''}>
-              <td>
-                <button className="link" onClick={() => toggleExpand(b.bookId)}>
-                  {b.label || b.bookId}
-                </button>
-                <div className="muted small">{b.repo?.owner}/{b.repo?.name}</div>
-              </td>
-              <td>{b.subject}</td>
-              <td>{[b.domain, b.branch].filter(Boolean).join(' · ') || '—'}</td>
-              <td>{b.questionCount}</td>
-              <td>
-                {b.solutionRepo ? (
-                  // Anything short of full coverage is worth flagging, since a
-                  // question with no solution is a visible gap on the site.
-                  <span className={b.solutionCount < b.questionCount ? 'warn' : ''}>
-                    {b.solutionCount ?? 0}
-                  </span>
-                ) : (
-                  <span className="muted">—</span>
-                )}
-              </td>
-              <td className={b.warningCount > 0 ? 'warn' : ''}>{b.warningCount}</td>
-              <td className="small">{formatTime(b.lastSyncedAt)}</td>
-              <td className="actions">
-                <button onClick={() => handleSync(b.bookId)} disabled={busyId === b.bookId}>
-                  Re-sync
-                </button>
-                <button className="danger" onClick={() => handleDelete(b.bookId)} disabled={busyId === b.bookId}>
-                  Delete
-                </button>
-              </td>
-            </tr>
-            {expandedId === b.bookId && (
-              <tr className="detail-row">
-                <td colSpan={8}>
-                  {detailError && <p className="error">{detailError}</p>}
-                  {!detailError && !detail && <p className="muted">Loading…</p>}
-                  {detail && <BookDetail book={detail} />}
+    // Scrolls rather than squeezing: the repo names are long enough to force
+    // the other columns to wrap otherwise.
+    <div className="table-scroll">
+      <table className="book-table">
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>Subject</th>
+            <th>Repo</th>
+            <th>Questions</th>
+            <th>Solutions</th>
+            <th>Warnings</th>
+            <th>Last synced</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {books.map((b) => (
+            <Fragment key={b.bookId}>
+              <tr className={busyId === b.bookId ? 'busy' : ''}>
+                <td>
+                  <button className="link" onClick={() => toggleExpand(b.bookId)}>
+                    {b.label || b.bookId}
+                  </button>
+                </td>
+                <td>{b.subject}</td>
+                <td className="repo-cell">
+                  {b.repo?.owner && b.repo?.name ? (
+                    <a
+                      href={`https://github.com/${b.repo.owner}/${b.repo.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {b.repo.owner}/{b.repo.name}
+                    </a>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
+                <td>{b.questionCount}</td>
+                <td>
+                  {b.solutionRepo ? (
+                    // Anything short of full coverage is worth flagging, since a
+                    // question with no solution is a visible gap on the site.
+                    <span className={b.solutionCount < b.questionCount ? 'warn' : ''}>
+                      {b.solutionCount ?? 0}
+                    </span>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
+                <td className={b.warningCount > 0 ? 'warn' : ''}>{b.warningCount}</td>
+                <td className="small">{formatTime(b.lastSyncedAt)}</td>
+                <td className="actions">
+                  <button onClick={() => handleSync(b.bookId)} disabled={busyId === b.bookId}>
+                    Re-sync
+                  </button>
+                  <button className="danger" onClick={() => handleDelete(b.bookId)} disabled={busyId === b.bookId}>
+                    Delete
+                  </button>
                 </td>
               </tr>
-            )}
-          </Fragment>
-        ))}
-      </tbody>
-    </table>
+              {expandedId === b.bookId && (
+                <tr className="detail-row">
+                  <td colSpan={8}>
+                    {detailError && <p className="error">{detailError}</p>}
+                    {!detailError && !detail && <p className="muted">Loading…</p>}
+                    {detail && <BookDetail book={detail} />}
+                  </td>
+                </tr>
+              )}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -142,7 +157,26 @@ function BookDetail({ book }) {
         Parser profile: <code>{book.parserProfile}</code> · Root path: <code>{book.repo?.rootPath || '(repo root)'}</code> ·
         Branch: <code>{book.repo?.branch}</code>
       </p>
-      <p className="muted small">{book.files?.length || 0} tex files indexed.</p>
+      <div className="chapter-index">
+        <p className="muted small">
+          {book.files?.length || 0} chapter{book.files?.length === 1 ? '' : 's'} indexed:
+        </p>
+        <ol className="chapter-list">
+          {(book.files || []).map((file) => (
+            <li key={file.fileId}>
+              {file.label}
+              <span className="muted small">
+                {' '}
+                · {file.questionCount ?? (file.questions || []).length} question
+                {(file.questionCount ?? (file.questions || []).length) === 1 ? '' : 's'}
+                {(file.warnings || []).length > 0 && (
+                  <span className="warn"> · {file.warnings.length} warning(s)</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       {book.solutionRepo && <VideoLinks book={book} />}
 

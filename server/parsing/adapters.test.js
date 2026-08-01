@@ -200,6 +200,48 @@ Second question, unrelated, also has \[ a - b \] display math.
   assert.equal(questions[1].options[0].value, 'W');
 });
 
+// Losing this distinction is not cosmetic: KaTeX rejects \tag{} in inline mode
+// and, with throwOnError:false, paints the equation's own LaTeX source on the
+// page instead of rendering it. \sum / \int limits move too.
+test('display and inline math are distinguished by their delimiters', () => {
+  const tex = String.raw`\MCQ{3}{2006}{2}{2}{D}{
+Inline $a+b$ and \(c+d\), then display $$e+f$$ and \[ g+h \].
+\InlineOptionsOneLine{A}{B}{C}{D}
+}`;
+  const { questions } = parseQuestions(tex, maths, { chapterFolder: 'x' });
+  const math = questions[0].body.filter((n) => n.type === 'math');
+
+  const displayFor = (value) => {
+    const node = math.find((n) => n.value.trim() === value);
+    assert.ok(node, `expected a math node for ${value}`);
+    return Boolean(node.display);
+  };
+
+  assert.equal(displayFor('a+b'), false, '$...$ is inline');
+  assert.equal(displayFor('c+d'), false, '\\(...\\) is inline');
+  assert.equal(displayFor('e+f'), true, '$$...$$ is display');
+  assert.equal(displayFor('g+h'), true, '\\[...\\] is display');
+});
+
+test('a tagged display equation survives parsing intact', () => {
+  // The real-world case: \tag{1} inside \[...\] must reach the renderer as
+  // display math, or KaTeX prints "V=10-I \tag{1}" as literal red text.
+  const tex = String.raw`\MCQ{3}{2006}{2}{2}{D}{
+The terminal voltage is \[ V = 10 - I \tag{1} \] and the load is \[ 7I = V^2 + 2V \tag{2} \].
+\InlineOptionsOneLine{A}{B}{C}{D}
+}`;
+  const { questions } = parseQuestions(tex, maths, { chapterFolder: 'x' });
+  const math = questions[0].body.filter((n) => n.type === 'math');
+
+  const tagged = math.filter((n) => n.value.includes('\\tag'));
+  assert.equal(tagged.length, 2, 'both tagged equations should be math nodes');
+  assert.ok(
+    tagged.every((n) => n.display === true),
+    'a \\tag equation must be display math or KaTeX refuses to render it'
+  );
+  assert.ok(tagged[1].value.includes('V^2'), 'the exponent must stay inside the math node');
+});
+
 test('a real-world data table renders, with styling commands stripped from cells', () => {
   // The exact question that originally surfaced this: \centering and
   // \arraybackslash are layout noise and must not leak into cell text, while

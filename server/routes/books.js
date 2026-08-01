@@ -6,6 +6,7 @@ const { profileForSubject } = require('../parsing/adapters');
 const { buildWarningsCsv } = require('../warningsCsv');
 const { buildVideosCsv, applyVideosCsv } = require('../videosCsv');
 const videoStore = require('../store/videoStore');
+const reportStore = require('../store/reportStore');
 
 const router = express.Router();
 
@@ -99,11 +100,21 @@ router.post('/:bookId/videos.csv', async (req, res) => {
     // bad line doesn't discard an otherwise good upload.
     await videoStore.writeVideos(req.params.bookId, result.videos);
 
+    // Supplying a video answers whoever asked for one, so those requests stop
+    // being outstanding demand. Keyed on (fileId, year, questionNum), which is
+    // exactly what videoStore keys overrides on.
+    const answered = Object.keys(result.videos).map((key) => {
+      const [fileId, year, questionNum] = key.split('|');
+      return { fileId, year, questionNum };
+    });
+    const clearedRequests = await reportStore.deleteVideoRequestsFor(req.params.bookId, answered);
+
     res.json({
       applied: result.applied,
       cleared: result.cleared,
       skipped: result.skipped,
       totalWithVideo: Object.keys(result.videos).length,
+      clearedVideoRequests: clearedRequests,
       errors: result.errors.slice(0, 25)
     });
   } catch (error) {

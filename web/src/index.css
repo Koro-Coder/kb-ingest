@@ -116,6 +116,9 @@ button.danger {
 
 .book-table {
   width: 100%;
+  /* Below this the long repo names squeeze everything else; the .table-scroll
+     wrapper takes over rather than letting columns wrap. */
+  min-width: 1040px;
   border-collapse: collapse;
 }
 
@@ -125,6 +128,47 @@ button.danger {
   padding: 10px 8px;
   border-bottom: 1px solid #eee;
   vertical-align: top;
+}
+
+/* Column widths. The numeric columns are narrow by nature, so the space goes
+   to the three that were being crushed: the book name, the timestamp, and the
+   action buttons. */
+.book-table th:nth-child(1),
+.book-table td:nth-child(1) {
+  min-width: 260px;
+}
+
+.book-table th:nth-child(2),
+.book-table td:nth-child(2) {
+  width: 90px;
+}
+
+/* Questions / Solutions / Warnings — just numbers. */
+.book-table th:nth-child(n + 4):nth-child(-n + 6),
+.book-table td:nth-child(n + 4):nth-child(-n + 6) {
+  width: 80px;
+  white-space: nowrap;
+}
+
+/* Last synced: never wrap a date onto two lines. */
+.book-table th:nth-child(7),
+.book-table td:nth-child(7) {
+  min-width: 170px;
+  white-space: nowrap;
+}
+
+/* Actions: keep Re-sync and Delete side by side. */
+.book-table th:nth-child(8),
+.book-table td:nth-child(8) {
+  min-width: 160px;
+}
+
+.book-table td:nth-child(1) button.link {
+  text-align: left;
+}
+
+.actions {
+  white-space: nowrap;
 }
 
 .book-table tr.busy {
@@ -216,6 +260,398 @@ button.danger {
 .tag-excluded {
   background: #fde2e1;
   color: #b3261e;
+}
+
+/* --- Tabs ----------------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  color: #2456e5;
+  border-bottom-color: #2456e5;
+}
+
+/* --- Reports queue -------------------------------------------------------- */
+
+.view-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.view-toggle button {
+  background: none;
+  border: 1px solid #d5d7db;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.view-toggle button.active {
+  border-color: #2456e5;
+  color: #2456e5;
+}
+
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.summary-chip.active {
+  border-color: #2456e5;
+  box-shadow: inset 0 0 0 1px #2456e5;
+}
+
+.summary-chip .chip-label {
+  margin-left: 6px;
+  font-weight: 600;
+  color: #444;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-bar input[type='search'] {
+  flex: 1 1 280px;
+  min-width: 220px;
+  padding: 6px 10px;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.filter-bar select {
+  padding: 6px 8px;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+  font: inherit;
+}
+
+/* Wide table: scroll it rather than letting it stretch the page. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.report-table th,
+.report-table td {
+  border-bottom: 1px solid #eceef0;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+/* Analytics columns: Requests / Year / Last raised are narrow by nature, so
+   the room goes to Book and Chapter, whose labels are long
+   ("Network Theory (EE) · Basic Concepts of Networks"). */
+.questions-table th:nth-child(1),
+.questions-table td:nth-child(1) {
+  width: 90px;
+  white-space: nowrap;
+}
+
+.questions-table th:nth-child(2),
+.questions-table td:nth-child(2) {
+  width: 90px;
+}
+
+.questions-table th:nth-child(4),
+.questions-table td:nth-child(4) {
+  min-width: 260px;
+}
+
+.questions-table th:nth-child(5),
+.questions-table td:nth-child(5) {
+  min-width: 300px;
+}
+
+.questions-table th:nth-child(6),
+.questions-table td:nth-child(6),
+.questions-table th:nth-child(7),
+.questions-table td:nth-child(7) {
+  white-space: nowrap;
+}
+
+.report-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.report-table th.sortable:hover {
+  color: #2456e5;
+}
+
+.sort-arrow {
+  color: #2456e5;
+}
+
+.report-table tr.orphaned {
+  background: #fffaf0;
+}
+
+.comment-cell {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.type-badge,
+.status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.type-question_issue { background: #fde2e1; color: #b3261e; }
+.type-solution_issue { background: #fdeccf; color: #8a5300; }
+.type-video_request  { background: #e2ecfd; color: #1c46bd; }
+
+.status-open      { background: #e8eaed; color: #444; }
+.status-reviewing { background: #e2ecfd; color: #1c46bd; }
+.status-resolved  { background: #dff3e4; color: #1d6b33; }
+.status-dismissed { background: #eceef0; color: #888; }
+
+.demand-count {
+  display: inline-block;
+  min-width: 26px;
+  text-align: center;
+  background: #2456e5;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+/* --- Analytics sub-tabs and detail view ----------------------------------- */
+
+.subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.subtabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 1px solid #d5d7db;
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+}
+
+.subtabs button.active {
+  border-color: #2456e5;
+  color: #2456e5;
+  background: #f2f6ff;
+}
+
+.subtab-count {
+  background: #e8eaed;
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 0.78rem;
+}
+
+.subtabs button.active .subtab-count {
+  background: #2456e5;
+  color: #fff;
+}
+
+/* --- Chapter index inside an expanded book -------------------------------- */
+
+.chapter-index {
+  margin-bottom: 10px;
+}
+
+.chapter-list {
+  margin: 2px 0 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+/* Repo names are long; keep them on one line and let the table scroll. */
+.repo-cell {
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+.repo-cell a {
+  color: #2456e5;
+  text-decoration: none;
+}
+
+.repo-cell a:hover {
+  text-decoration: underline;
+}
+
+.report-table tr.clickable {
+  cursor: pointer;
+}
+
+.report-table tr.clickable:hover {
+  background: #f5f7fb;
+}
+
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.detail-head h3 {
+  margin: 0 0 2px;
+}
+
+.detail-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  background: #fafbfc;
+  border: 1px solid #eceef0;
+  border-radius: 10px;
+}
+
+.detail-facts dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #888;
+}
+
+.detail-facts dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.mini-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  vertical-align: -4px;
+  margin-right: 6px;
+}
+
+button.danger {
+  background: #b3261e;
+  border: 1px solid #b3261e;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #8c1d17;
+}
+
+button.danger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  .subtabs button { border-color: #3a3d47; color: #9aa0aa; }
+  .subtabs button.active { border-color: #8ab4f8; color: #8ab4f8; background: #1a2233; }
+  .subtab-count { background: #2c2f38; color: #cfd3da; }
+  .subtabs button.active .subtab-count { background: #8ab4f8; color: #14161b; }
+  .report-table tr.clickable:hover { background: #24262c; }
+  .detail-facts { background: #1a1c22; border-color: #2c2f38; }
+  .detail-facts dt { color: #8a8f98; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .tabs { border-color: #2c2f38; }
+  .tabs button { color: #9aa0aa; }
+  .tabs button.active { color: #8ab4f8; border-bottom-color: #8ab4f8; }
+  .view-toggle button { border-color: #3a3d47; color: #9aa0aa; }
+  .view-toggle button.active { border-color: #8ab4f8; color: #8ab4f8; }
+  .summary-chip { background: #1f222a; border-color: #2c2f38; color: #e6e6e6; }
+  .summary-chip.active { border-color: #8ab4f8; box-shadow: inset 0 0 0 1px #8ab4f8; }
+  .summary-chip .chip-label { color: #cfd3da; }
+  .filter-bar input[type='search'],
+  .filter-bar select { background: #14161b; border-color: #3a3d47; color: #e6e6e6; }
+  .report-table th,
+  .report-table td { border-color: #2c2f38; }
+  .report-table th.sortable:hover { color: #8ab4f8; }
+  .sort-arrow { color: #8ab4f8; }
+  .report-table tr.orphaned { background: #2a2519; }
+  .type-question_issue { background: #4c1d1a; color: #ff8a80; }
+  .type-solution_issue { background: #3a2c14; color: #f0d9a8; }
+  .type-video_request  { background: #1e2a44; color: #8ab4f8; }
+  .status-open      { background: #2c2f38; color: #cfd3da; }
+  .status-reviewing { background: #1e2a44; color: #8ab4f8; }
+  .status-resolved  { background: #1d3524; color: #9fd8ae; }
+  .status-dismissed { background: #24262c; color: #8a8f98; }
 }
 
 @media (prefers-color-scheme: dark) {

@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const booksRouter = require('./routes/books');
+const reportsRouter = require('./routes/reports');
 const mongo = require('./store/mongo');
 
 const app = express();
@@ -28,6 +29,7 @@ app.get('/health', async (req, res) => {
 });
 
 app.use('/api/books', booksRouter);
+app.use('/api/reports', reportsRouter);
 
 // Serve the built admin UI in production; in dev, run `npm run dev` inside web/ separately.
 const webDist = path.join(__dirname, '..', 'web', 'dist');

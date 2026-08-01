@@ -9,7 +9,14 @@ const DEFAULT_DB = 'prepfusion_kb';
 const COLLECTIONS = {
   subjects: 'subjects',
   books: 'books',
-  videos: 'videos'
+  videos: 'videos',
+  // Written by kb-website when a user reports a problem or asks for a video.
+  // This project reads them, and deletes them once the underlying problem is
+  // fixed — it is the admin side of that queue.
+  reports: 'reports',
+  // Read-only here: kb-website owns sign-in. Used only to show an admin who
+  // filed a report.
+  users: 'users'
 };
 
 let clientPromise = null;
@@ -60,6 +67,10 @@ async function ensureIndexes() {
   const db = await getDb();
   await db.collection(COLLECTIONS.books).createIndex({ subject: 1 });
   await db.collection(COLLECTIONS.videos).createIndex({ bookId: 1 });
+  // How the admin queue reads them: newest first within a type/status, and
+  // everything filed against one question.
+  await db.collection(COLLECTIONS.reports).createIndex({ status: 1, type: 1, createdAt: -1 });
+  await db.collection(COLLECTIONS.reports).createIndex({ bookId: 1, fileId: 1, year: 1, questionNum: 1 });
 }
 
 async function ping() {

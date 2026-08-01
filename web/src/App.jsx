@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import BookForm from './components/BookForm.jsx';
 import BookList from './components/BookList.jsx';
+import AnalyticsPanel from './components/AnalyticsPanel.jsx';
 import { listBooks, registerBook } from './api.js';
 
 export default function App() {
+  const [tab, setTab] = useState('books');
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -53,21 +55,36 @@ export default function App() {
         </p>
       </header>
 
-      <BookForm onSubmit={handleRegister} submitting={submitting} error={submitError} />
+      <nav className="tabs">
+        <button className={tab === 'books' ? 'active' : ''} onClick={() => setTab('books')}>
+          Books
+        </button>
+        <button className={tab === 'analytics' ? 'active' : ''} onClick={() => setTab('analytics')}>
+          Analytics
+        </button>
+      </nav>
 
-      <section className="card">
-        <div className="section-head">
-          <h2>Registered books</h2>
-          {totalWarnings > 0 && (
-            <a className="button-link" href="/api/books/warnings.csv" download>
-              Download all warnings (CSV)
-            </a>
-          )}
-        </div>
-        {loading && <p className="muted">Loading…</p>}
-        {loadError && <p className="error">{loadError}</p>}
-        {!loading && !loadError && <BookList books={books} onChanged={refresh} />}
-      </section>
+      {tab === 'books' && (
+        <>
+          <BookForm onSubmit={handleRegister} submitting={submitting} error={submitError} />
+
+          <section className="card">
+            <div className="section-head">
+              <h2>Registered books</h2>
+              {totalWarnings > 0 && (
+                <a className="button-link" href="/api/books/warnings.csv" download>
+                  Download all warnings (CSV)
+                </a>
+              )}
+            </div>
+            {loading && <p className="muted">Loading…</p>}
+            {loadError && <p className="error">{loadError}</p>}
+            {!loading && !loadError && <BookList books={books} onChanged={refresh} />}
+          </section>
+        </>
+      )}
+
+      {tab === 'analytics' && <AnalyticsPanel />}
     </div>
   );
 }

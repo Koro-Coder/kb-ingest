@@ -602,11 +602,18 @@ function isNonMathEnvironmentSpan(value) {
   return Boolean(match && !MATH_SAFE_ENVIRONMENTS.has(match[1]));
 }
 
-function pushMathOrContent(body, context, resolveImagePath, value) {
+// `display` distinguishes $$...$$ and \[...\] from $...$ and \(...\), and is
+// what sets KaTeX's displayMode at render time. It is not only cosmetic:
+// \tag{} is rejected outright in inline mode (KaTeX then prints the equation's
+// own source instead of rendering it), and \sum / \int / \lim put their limits
+// beside the operator rather than above and below it.
+function pushMathOrContent(body, context, resolveImagePath, value, display) {
   if (isNonMathEnvironmentSpan(value)) {
     appendParsedContent(body, context, resolveImagePath, value);
   } else {
-    body.push({ type: 'math', value });
+    // Set only when true, so inline nodes keep exactly the shape they have had
+    // all along and nothing downstream has to be updated for them.
+    body.push(display ? { type: 'math', value, display: true } : { type: 'math', value });
   }
 }
 
@@ -622,7 +629,7 @@ function parseInlineContent(content, context, resolveImagePath) {
     if (content.startsWith('$$', i)) {
       const end = content.indexOf('$$', i + 2);
       const value = end === -1 ? content.slice(i + 2) : content.slice(i + 2, end);
-      pushMathOrContent(body, context, resolveImagePath, value);
+      pushMathOrContent(body, context, resolveImagePath, value, true);
       i = end === -1 ? content.length : end + 2;
       continue;
     }
@@ -630,7 +637,7 @@ function parseInlineContent(content, context, resolveImagePath) {
     if (content[i] === '$') {
       const end = content.indexOf('$', i + 1);
       const value = end === -1 ? content.slice(i + 1) : content.slice(i + 1, end);
-      pushMathOrContent(body, context, resolveImagePath, value);
+      pushMathOrContent(body, context, resolveImagePath, value, false);
       i = end === -1 ? content.length : end + 1;
       continue;
     }
@@ -638,7 +645,7 @@ function parseInlineContent(content, context, resolveImagePath) {
     if (content.startsWith('\\[', i)) {
       const end = content.indexOf('\\]', i + 2);
       const value = end === -1 ? content.slice(i + 2) : content.slice(i + 2, end);
-      pushMathOrContent(body, context, resolveImagePath, value);
+      pushMathOrContent(body, context, resolveImagePath, value, true);
       i = end === -1 ? content.length : end + 2;
       continue;
     }
@@ -650,7 +657,7 @@ function parseInlineContent(content, context, resolveImagePath) {
       // evaluated as plain prose and flagged as "unrecognized".
       const end = content.indexOf('\\)', i + 2);
       const value = end === -1 ? content.slice(i + 2) : content.slice(i + 2, end);
-      pushMathOrContent(body, context, resolveImagePath, value);
+      pushMathOrContent(body, context, resolveImagePath, value, false);
       i = end === -1 ? content.length : end + 2;
       continue;
     }
