@@ -7,10 +7,12 @@
   "scripts": {
     "start": "node --env-file=.env server/index.js",
     "dev": "node --env-file=.env --watch server/index.js",
-    "test": "node --test server/**/*.test.js"
+    "test": "node --test server/**/*.test.js",
+    "migrate": "node --env-file=.env scripts/migrate-kb-data-to-mongo.js"
   },
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "mongodb": "^7.5.0"
   }
 }
