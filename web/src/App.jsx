@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import AppHeader from './components/AppHeader.jsx';
 import BookForm from './components/BookForm.jsx';
 import BookList from './components/BookList.jsx';
 import AnalyticsPanel from './components/AnalyticsPanel.jsx';
@@ -7,7 +8,7 @@ import { listBooks, registerBook, downloadCsv } from './api.js';
 import { useAuth } from './auth.jsx';
 
 export default function App() {
-  const { user, isOwner, signOut } = useAuth();
+  const { isOwner } = useAuth();
   const [tab, setTab] = useState('books');
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,72 +51,63 @@ export default function App() {
   const totalWarnings = books.reduce((sum, b) => sum + (b.warningCount || 0), 0);
 
   return (
-    <div className="app">
-      <div className="account-bar">
-        {user && (
+    <>
+      <AppHeader tab={tab} onTab={setTab} />
+
+      <div className="app">
+        <div className="page-head">
+          <div>
+            <h1>Knowledge base</h1>
+            <p className="lede">
+              Register a GitHub repo of LaTeX question banks, sync it into the shared knowledge base,
+              and watch what readers report back.
+            </p>
+          </div>
+
+          {/* The counts belong to the books, so they stay put across tabs
+              rather than becoming two different meanings of the same box. The
+              book count is not among them — the table below is the answer to
+              "how many books", and repeating it here said nothing new. */}
+          <div className="statbox">
+            <div>
+              <b>{totalQuestions}</b>
+              <span>Questions</span>
+            </div>
+            <div className={totalWarnings > 0 ? 'is-warn' : undefined}>
+              <b>{totalWarnings}</b>
+              <span>Warnings</span>
+            </div>
+          </div>
+        </div>
+
+        {tab === 'books' && (
           <>
-            <span className="account-user" title={user.email}>
-              {user.avatarUrl && <img className="avatar" src={user.avatarUrl} alt="" />}
-              {user.name || user.email}
-            </span>
-            <span className={`status-badge status-${isOwner ? 'reviewing' : 'open'}`}>{user.role}</span>
-            <button className="link" onClick={signOut}>
-              Sign out
-            </button>
+            <BookForm onSubmit={handleRegister} submitting={submitting} error={submitError} />
+
+            <section className="card">
+              <div className="section-head">
+                <h2>Registered books</h2>
+                {totalWarnings > 0 && (
+                  // Fetched with the bearer token rather than a plain href — the
+                  // browser would follow that link unauthenticated and get a 401.
+                  <button
+                    className="button-link"
+                    onClick={() => downloadCsv('/api/books/warnings.csv', 'prepfusion-warnings.csv')}
+                  >
+                    Download all warnings (CSV)
+                  </button>
+                )}
+              </div>
+              {loading && <p className="muted">Loading…</p>}
+              {loadError && <p className="error">{loadError}</p>}
+              {!loading && !loadError && <BookList books={books} onChanged={refresh} />}
+            </section>
           </>
         )}
+
+        {tab === 'analytics' && <AnalyticsPanel />}
+        {tab === 'admins' && isOwner && <AdminsPanel />}
       </div>
-
-      <header>
-        <h1>PrepFusion Knowledge Base — Ingest</h1>
-        <p className="muted">
-          {books.length} books · {totalQuestions} questions · {totalWarnings} warnings
-        </p>
-      </header>
-
-      <nav className="tabs">
-        <button className={tab === 'books' ? 'active' : ''} onClick={() => setTab('books')}>
-          Books
-        </button>
-        <button className={tab === 'analytics' ? 'active' : ''} onClick={() => setTab('analytics')}>
-          Analytics
-        </button>
-        {/* Owner-only. The server refuses the underlying routes regardless, so
-            hiding the tab is convenience, not the control. */}
-        {isOwner && (
-          <button className={tab === 'admins' ? 'active' : ''} onClick={() => setTab('admins')}>
-            Administrators
-          </button>
-        )}
-      </nav>
-
-      {tab === 'books' && (
-        <>
-          <BookForm onSubmit={handleRegister} submitting={submitting} error={submitError} />
-
-          <section className="card">
-            <div className="section-head">
-              <h2>Registered books</h2>
-              {totalWarnings > 0 && (
-                // Fetched with the bearer token rather than a plain href — the
-                // browser would follow that link unauthenticated and get a 401.
-                <button
-                  className="button-link"
-                  onClick={() => downloadCsv('/api/books/warnings.csv', 'prepfusion-warnings.csv')}
-                >
-                  Download all warnings (CSV)
-                </button>
-              )}
-            </div>
-            {loading && <p className="muted">Loading…</p>}
-            {loadError && <p className="error">{loadError}</p>}
-            {!loading && !loadError && <BookList books={books} onChanged={refresh} />}
-          </section>
-        </>
-      )}
-
-      {tab === 'analytics' && <AnalyticsPanel />}
-      {tab === 'admins' && isOwner && <AdminsPanel />}
-    </div>
+    </>
   );
 }

@@ -54,6 +54,10 @@ export default function BookForm({ onSubmit, submitting, error }) {
   return (
     <form className="card" onSubmit={handleSubmit}>
       <h2>Register / sync a repo</h2>
+      <p className="card-sub">
+        Point at a question repo; the parser reads it, indexes every chapter and reports what it could
+        not understand.
+      </p>
 
       <label>
         Repo URL
@@ -139,11 +143,12 @@ export default function BookForm({ onSubmit, submitting, error }) {
         </label>
       </details>
 
-      {error && <p className="error">{error}</p>}
-
-      <button type="submit" disabled={submitting}>
-        {submitting ? 'Syncing…' : 'Register & Sync'}
-      </button>
+      <div className="form-foot">
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Syncing…' : 'Register & Sync'}
+        </button>
+        {error && <p className="error">{error}</p>}
+      </div>
     </form>
   );
 }

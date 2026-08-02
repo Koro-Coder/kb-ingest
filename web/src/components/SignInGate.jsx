@@ -1,4 +1,5 @@
 import { useAuth } from '../auth.jsx';
+import Brand from './Brand.jsx';
 
 // The whole portal sits behind this. Nothing here is public, so there is no
 // partial view for a signed-out visitor — just the door.
@@ -7,7 +8,7 @@ export default function SignInGate({ children }) {
 
   if (status === 'loading') {
     return (
-      <div className="app">
+      <div className="signin">
         <p className="muted">Checking your access…</p>
       </div>
     );
@@ -18,8 +19,9 @@ export default function SignInGate({ children }) {
   }
 
   return (
-    <div className="app signin">
-      <h1>PrepFusion Admin</h1>
+    <div className="signin">
+      <Brand large />
+      <h1>Ingest console</h1>
 
       {deniedEmail !== null ? (
         <div className="signin-denied">

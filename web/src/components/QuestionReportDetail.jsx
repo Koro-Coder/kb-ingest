@@ -138,29 +138,31 @@ export default function QuestionReportDetail({ target, onBack, onResolved }) {
           )}
 
           <h4>Who raised {isVideo ? 'this request' : 'this'}</h4>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Raised</th>
-                <th>Comment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.reports.map((r) => (
-                <tr key={r.id}>
-                  <td className="nowrap">
-                    {r.user.avatarUrl && <img className="mini-avatar" src={r.user.avatarUrl} alt="" />}
-                    {r.user.name || <span className="muted">unknown user</span>}
-                  </td>
-                  <td>{r.user.email || <span className="muted">—</span>}</td>
-                  <td className="nowrap">{formatDateTime(r.createdAt)}</td>
-                  <td>{r.comment || <span className="muted">—</span>}</td>
+          <div className="table-scroll" style={{ marginTop: 10 }}>
+            <table className="report-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Raised</th>
+                  <th>Comment</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.reports.map((r) => (
+                  <tr key={r.id}>
+                    <td className="nowrap">
+                      {r.user.avatarUrl && <img className="mini-avatar" src={r.user.avatarUrl} alt="" />}
+                      {r.user.name || <span className="muted">unknown user</span>}
+                    </td>
+                    <td>{r.user.email || <span className="muted">—</span>}</td>
+                    <td className="nowrap">{formatDateTime(r.createdAt)}</td>
+                    <td>{r.comment || <span className="muted">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>

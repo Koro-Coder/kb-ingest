@@ -91,7 +91,9 @@ export default function AdminsPanel() {
       {error && <p className="error">{error}</p>}
 
       <div className="table-scroll">
-        <table className="book-table">
+        {/* Its own class, not .book-table: that one carries a 1040px floor and
+            per-column widths tuned for repo names, which do not exist here. */}
+        <table className="admin-table">
           <thead>
             <tr>
               <th>Email</th>
@@ -125,6 +127,7 @@ export default function AdminsPanel() {
                   <td className="small">{formatDate(a.lastLoginAt)}</td>
                   <td className="actions">
                     <button
+                      className="ghost"
                       disabled={busy || isLastOwner}
                       title={isLastOwner ? 'Promote another owner first' : ''}
                       onClick={() =>

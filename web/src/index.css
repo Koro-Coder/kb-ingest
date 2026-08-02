@@ -1,133 +1,763 @@
+/* ===========================================================================
+   PALETTE
+   The same tokens the public Study Hub and the PDF library use, so the admin
+   portal reads as part of PrepFusion rather than a separate tool. Every
+   text/background pair clears WCAG AA (4.5:1) in BOTH themes.
+
+   Theme is driven by data-theme on <html>, set before first paint by the
+   inline script in index.html — never by prefers-color-scheme alone, which
+   would ignore a visitor who has chosen for themselves.
+   =========================================================================== */
 :root {
-  color-scheme: light dark;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: light;
+  --paper: #f2f5fa;
+  --card: #ffffff;
+  --ink: #0a1020;        /* 19.0:1 on card */
+  --ink-soft: #475a78;   /*  7.0:1 on card */
+  --ink-faint: #4f6080;  /*  5.4:1 on chip */
+  --line: #dde4f0;
+  --line-strong: #c3cddf;
+  --brand: #14307f;
+  --accent: #ffcf2d;
+  /* The "Fusion" half of the wordmark. NOT --brand: that is a muted navy for
+     links and focus rings, and against --ink it measures 1.59:1 — the two-tone
+     effect would be applied but invisible. */
+  --wordmark: #1668d6;
+  /* --accent as TEXT on these backgrounds is ~1.4:1. --accent-ink is the
+     readable end of the same family, for anywhere the accent colours a letter
+     or a word rather than a dot or a fill. */
+  --accent-ink: #7a4200;
+  --chipbg: #e9eef7;
+  --on-ink: #ffffff;
+  --ok: #1d6b33;
+  --ok-bg: #dff3e4;
+  --warn: #8a5300;
+  --warn-bg: #fdeccf;
+  --bad: #b3261e;
+  --bad-bg: #fdf1f0;
+  --info: #1c46bd;
+  --info-bg: #e2ecfd;
+  --radius: 18px;
+  --shadow: 0 1px 2px rgba(10, 16, 32, 0.06), 0 10px 30px -14px rgba(10, 16, 32, 0.22);
+  --shadow-lift: 0 3px 8px rgba(10, 16, 32, 0.1), 0 26px 50px -18px rgba(10, 16, 32, 0.32);
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --display: 'Sora', 'Inter', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: #0a1020;
+  --card: #151f36;
+  --ink: #f2f6ff;        /* 15.1:1 on card */
+  --ink-soft: #a9b8d6;   /*  8.2:1 on card */
+  --ink-faint: #94a4c4;  /*  5.8:1 on chip */
+  --line: #2a3854;
+  --line-strong: #3c4d70;
+  --brand: #9db6ff;
+  --accent: #ffd54a;
+  --wordmark: #4d92ff;
+  /* Already 11-13:1 on these backgrounds as text — no darkening needed. */
+  --accent-ink: #ffd54a;
+  --chipbg: #1e2942;
+  --on-ink: #0a1020;
+  --ok: #9fd8ae;
+  --ok-bg: #1d3524;
+  --warn: #f0d9a8;
+  --warn-bg: #3a2c14;
+  --bad: #ff8a80;
+  --bad-bg: #3a1f1d;
+  --info: #8ab4f8;
+  --info-bg: #1e2a44;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 30px -14px rgba(0, 0, 0, 0.75);
+  --shadow-lift: 0 3px 8px rgba(0, 0, 0, 0.55), 0 26px 50px -18px rgba(0, 0, 0, 0.9);
+}
+
+/* ---------- base ---------- */
+
+* {
+  box-sizing: border-box;
+}
+
+/* Any element with a `display` rule of its own permanently wins over the
+   browser's default [hidden]{display:none} — author CSS always beats the UA
+   stylesheet regardless of specificity. */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  background: #f4f5f7;
-  color: #1a1a1a;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 15px/1.6 var(--sans);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+a {
+  color: var(--brand);
+}
+
+::selection {
+  background: var(--accent);
+  color: #0a1020;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--display);
+  letter-spacing: -0.02em;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--chipbg);
+  border-radius: 5px;
+  padding: 1px 5px;
 }
 
 .app {
-  max-width: 960px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 24px 16px 64px;
-}
-
-header h1 {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
+  padding: 0 24px 72px;
 }
 
 .muted {
-  color: #666;
+  color: var(--ink-soft);
 }
 
 .small {
   font-size: 0.85rem;
 }
 
+.mono {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
 .error {
-  color: #b3261e;
+  color: var(--bad);
   font-weight: 600;
 }
 
 .warn {
-  color: #a15c00;
+  color: var(--warn);
+  font-weight: 600;
 }
+
+/* ---------- brand wordmark ---------- */
+/* No logo bitmap ships with this app, so the mark is drawn: a rounded ink tile
+   with a P in it, "Prep" in the surrounding ink, "Fusion" in wordmark blue.
+   NEVER text-transform it — the mark is "PrepFusion", not "PREPFUSION". */
+
+.bm {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.bm-mono {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 800 13px var(--display);
+  flex-shrink: 0;
+}
+
+.bm-text {
+  font: 600 15px var(--display);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.bm-text b {
+  font-weight: 800;
+  color: var(--wordmark);
+}
+
+.bm-lg .bm-mono {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  font-size: 19px;
+  transform: rotate(-4deg);
+}
+
+.bm-lg .bm-text {
+  font: 700 20px var(--display);
+  letter-spacing: -0.03em;
+}
+
+/* ---------- top bar ---------- */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .bar {
+    background: color-mix(in srgb, var(--paper) 86%, transparent);
+    backdrop-filter: blur(14px);
+  }
+}
+
+.bar-in {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+
+/* The tabs live in the bar rather than in a second strip below it: two rows of
+   navigation gave the page two competing headers. */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.nav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font: 500 14px var(--sans);
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nav button:hover {
+  color: var(--ink);
+  background: var(--chipbg);
+}
+
+.nav button.nav-current {
+  color: var(--ink);
+  background: var(--chipbg);
+  font-weight: 650;
+}
+
+.nav-ic {
+  flex-shrink: 0;
+}
+
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tt {
+  width: 38px;
+  height: 38px;
+  /* Explicit, because the base button rule's 9px/16px padding would otherwise
+     leave a content box narrower than the icon — and a grid item wider than
+     its track overflows the end edge only, which reads as "shoved right"
+     rather than as symmetrical overflow. */
+  padding: 0;
+  border-radius: 11px;
+  border: 1.5px solid var(--line-strong);
+  background: var(--card);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.tt:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.tt .i-sun {
+  display: none;
+}
+
+:root[data-theme='dark'] .tt .i-sun {
+  display: block;
+}
+
+:root[data-theme='dark'] .tt .i-moon {
+  display: none;
+}
+
+/* ---------- account menu ---------- */
+/* The picture is the button; who you are and how to leave live behind it.
+   Spelling "Sign out" across the bar put a destructive action one stray click
+   from the theme toggle. */
+
+.acct {
+  position: relative;
+  display: inline-flex;
+}
+
+.avatar-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  object-fit: cover;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+
+.avatar-btn:hover .avatar,
+.avatar-btn[aria-expanded='true'] .avatar {
+  border-color: var(--ink-soft);
+}
+
+.avatar-fallback {
+  display: grid;
+  place-items: center;
+  background: var(--chipbg);
+  color: var(--ink);
+  font: 700 15px var(--display);
+  line-height: 1;
+}
+
+/* position:fixed, not absolute — the nav beside it scrolls sideways on a
+   narrow window, and a scrolling ancestor clips an absolute child. */
+.acct-panel {
+  position: fixed;
+  z-index: 60;
+  min-width: 210px;
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+
+.acct-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-bottom: 1.5px solid var(--line);
+}
+
+.acct-who strong {
+  font: 650 13.5px var(--sans);
+}
+
+/* An address is longer than the panel is wide far more often than a name is. */
+.acct-who span {
+  font: 400 12px var(--mono);
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.acct-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  background: none;
+  font: 600 13.5px var(--sans);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.acct-item:hover {
+  background: var(--chipbg);
+  color: var(--bad);
+}
+
+/* ---------- page head + stats ---------- */
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+  padding: 34px 0 26px;
+}
+
+.page-head h1 {
+  margin: 0;
+  font: 800 clamp(26px, 3.4vw, 36px)/1.15 var(--display);
+  letter-spacing: -0.035em;
+}
+
+.page-head .lede {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+/* Three counts in one outlined block, the same shape the public site uses for
+   its library totals. */
+.statbox {
+  display: flex;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.statbox div {
+  padding: 12px 22px;
+  text-align: center;
+}
+
+.statbox div + div {
+  border-left: 1.5px solid var(--line-strong);
+}
+
+.statbox b {
+  display: block;
+  font: 800 24px var(--display);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.statbox span {
+  font: 500 10.5px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.statbox .is-warn b {
+  color: var(--warn);
+}
+
+/* ---------- cards ---------- */
 
 .card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow);
 }
 
-.card h2 {
-  margin-top: 0;
-  font-size: 1.1rem;
+.card > h2 {
+  margin: 0 0 4px;
+  font: 700 18px var(--display);
 }
+
+.card > h2 + .card-sub {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.card h4 {
+  margin: 0;
+  font: 700 14px var(--display);
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.section-head h2,
+.section-head h4 {
+  margin: 0;
+}
+
+/* ---------- forms ---------- */
 
 form label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 14px;
+  font: 600 12px var(--sans);
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
 }
 
 form input,
-form select {
-  font-weight: normal;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
+form select,
+form textarea {
+  font: 400 14px var(--sans);
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 11px;
+  padding: 10px 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+form input::placeholder {
+  color: var(--ink-faint);
+}
+
+form input:focus,
+form select:focus,
+.filter-bar input:focus,
+.filter-bar select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px var(--chipbg);
 }
 
 .row {
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .row > label {
-  flex: 1;
+  flex: 1 1 220px;
 }
 
+/* Advanced fields are folded away by default; the summary should read as a
+   control, not as body text that happens to be clickable. */
 details {
-  margin-bottom: 12px;
+  margin: 4px 0 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 0 14px;
+  background: var(--paper);
 }
+
+details[open] {
+  padding-bottom: 4px;
+}
+
+summary {
+  cursor: pointer;
+  padding: 11px 0;
+  font: 600 13px var(--sans);
+  color: var(--ink-soft);
+  list-style-position: outside;
+}
+
+summary:hover {
+  color: var(--ink);
+}
+
+.form-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* ---------- buttons ---------- */
 
 button {
+  font: 600 13.5px var(--sans);
   cursor: pointer;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  background: #2456e5;
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.9rem;
+  border: 1.5px solid var(--ink);
+  border-radius: 11px;
+  padding: 9px 16px;
+  background: var(--ink);
+  color: var(--paper);
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-ink);
 }
 
 button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: default;
+}
+
+/* Secondary: the row actions that are neither the page's main verb nor
+   destructive (Re-sync, Make owner, Download CSV). */
+button.ghost,
+.button-link {
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  color: var(--ink);
+}
+
+button.ghost:hover:not(:disabled),
+.button-link:hover {
+  background: var(--chipbg);
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
+button.danger {
+  background: none;
+  border-color: var(--line-strong);
+  color: var(--bad);
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: #fff;
+}
+
+:root[data-theme='dark'] button.danger:hover:not(:disabled) {
+  color: #0a1020;
 }
 
 button.link {
   background: none;
-  color: #2456e5;
+  border: 0;
   padding: 0;
+  color: var(--brand);
+  font-family: var(--sans);
+  font-size: inherit;
   font-weight: 600;
   text-align: left;
+  white-space: normal;
 }
 
-button.danger {
-  background: #b3261e;
+button.link:hover:not(:disabled) {
+  background: none;
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+/* An <a download> would be simpler, but every route here needs the bearer
+   token — so the CSV links are buttons that fetch and save a blob. */
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 600 13px var(--sans);
+  border-radius: 11px;
+  padding: 8px 14px;
 }
 
 .actions {
   display: flex;
   gap: 8px;
+  white-space: nowrap;
 }
 
-.book-table {
+/* ---------- tables ---------- */
+
+/* Wide tables scroll inside their card rather than stretching the page. */
+.table-scroll {
+  overflow-x: auto;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.book-table,
+.admin-table,
+.report-table {
   width: 100%;
-  /* Below this the long repo names squeeze everything else; the .table-scroll
-     wrapper takes over rather than letting columns wrap. */
-  min-width: 1040px;
   border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+/* Below this the long repo names squeeze everything else; the .table-scroll
+   wrapper takes over rather than letting columns wrap. */
+.book-table {
+  min-width: 1040px;
 }
 
 .book-table th,
-.book-table td {
+.admin-table th,
+.report-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--chipbg);
   text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #eee;
+  padding: 10px 12px;
+  font: 600 10.5px var(--mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  border-bottom: 1.5px solid var(--line);
+}
+
+.book-table td,
+.admin-table td,
+.report-table td {
+  padding: 11px 12px;
+  text-align: left;
   vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.book-table tbody tr:last-child td,
+.admin-table tbody tr:last-child td,
+.report-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.book-table tbody tr:hover,
+.admin-table tbody tr:hover {
+  background: color-mix(in srgb, var(--chipbg) 45%, transparent);
+}
+
+.book-table tr.busy {
+  opacity: 0.5;
 }
 
 /* Column widths. The numeric columns are narrow by nature, so the space goes
@@ -148,6 +778,8 @@ button.danger {
 .book-table td:nth-child(n + 4):nth-child(-n + 6) {
   width: 80px;
   white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 0.82rem;
 }
 
 /* Last synced: never wrap a date onto two lines. */
@@ -160,314 +792,60 @@ button.danger {
 /* Actions: keep Re-sync and Delete side by side. */
 .book-table th:nth-child(8),
 .book-table td:nth-child(8) {
-  min-width: 160px;
+  min-width: 170px;
 }
 
 .book-table td:nth-child(1) button.link {
-  text-align: left;
+  font-weight: 650;
+  color: var(--ink);
 }
 
-.actions {
+.book-table td:nth-child(1) button.link:hover {
+  color: var(--brand);
+}
+
+/* Repo names are long; keep them on one line and let the table scroll. */
+.repo-cell {
   white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 0.78rem;
 }
 
-.book-table tr.busy {
-  opacity: 0.5;
-}
-
-.detail-row td {
-  background: #fafafa;
-}
-
-.detail {
-  padding: 8px 0;
-}
-
-.warning-file {
-  margin-bottom: 12px;
-}
-
-.warning-file pre {
-  white-space: pre-wrap;
-  background: #fff3e0;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  margin: 4px 0 0;
-}
-
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.section-head h2,
-.section-head h4 {
-  margin: 0;
-}
-
-/* An <a download> rather than a button: lets the browser handle the file save
-   directly, so no blob/JS plumbing is needed. */
-.button-link {
-  display: inline-block;
-  background: #1f7a4d;
-  color: #fff;
+.repo-cell a {
+  color: var(--ink-soft);
   text-decoration: none;
-  border-radius: 6px;
-  padding: 7px 14px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  white-space: nowrap;
 }
 
-.button-link:hover {
-  background: #18633e;
+.repo-cell a:hover {
+  color: var(--brand);
+  text-decoration: underline;
 }
 
-.videos {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin: 14px 0;
-}
-
-.upload-result {
-  font-size: 0.9rem;
-  margin-top: 8px;
-}
-
-.upload-errors {
-  margin: 6px 0 0;
-  padding-left: 20px;
-  font-size: 0.85rem;
-}
-
-.tag {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 2px 7px;
-  border-radius: 999px;
-  margin-right: 8px;
-  vertical-align: middle;
-}
-
-.tag-excluded {
-  background: #fde2e1;
-  color: #b3261e;
-}
-
-/* --- Sign-in gate and account bar ----------------------------------------- */
-
-.signin {
-  max-width: 460px;
-  text-align: center;
-  padding-top: 80px;
-}
-
-.signin-denied {
-  background: #fdf1f0;
-  border: 1px solid #f3c9c6;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 18px;
-  text-align: left;
-}
-
-.account-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  min-height: 32px;
-  font-size: 0.9rem;
-}
-
-.account-user {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #444;
-}
-
-.avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-}
-
-.btn-google {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid #dadce0;
-  border-radius: 999px;
-  padding: 8px 18px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #3c4043;
+.report-table tr.clickable {
   cursor: pointer;
 }
 
-.btn-google:hover {
-  background: #f7f8f8;
+.report-table tr.clickable:hover {
+  background: color-mix(in srgb, var(--chipbg) 55%, transparent);
 }
 
-.admin-add {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0 16px;
-}
-
-.admin-add input[type='email'] {
-  flex: 1 1 260px;
-  padding: 7px 10px;
-  border: 1px solid #d5d7db;
-  border-radius: 8px;
-  font: inherit;
-}
-
-.admin-add select {
-  padding: 7px 8px;
-  border: 1px solid #d5d7db;
-  border-radius: 8px;
-  font: inherit;
-}
-
-@media (prefers-color-scheme: dark) {
-  .signin-denied { background: #3a1f1d; border-color: #5c2d29; }
-  .account-user { color: #cfd3da; }
-  .btn-google { background: #1f222a; border-color: #3a3d47; color: #e6e6e6; }
-  .btn-google:hover { background: #262a33; }
-  .admin-add input[type='email'],
-  .admin-add select { background: #14161b; border-color: #3a3d47; color: #e6e6e6; }
-}
-
-/* --- Tabs ----------------------------------------------------------------- */
-
-.tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.tabs button {
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 8px 16px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #666;
+.report-table th.sortable {
   cursor: pointer;
+  user-select: none;
 }
 
-.tabs button.active {
-  color: #2456e5;
-  border-bottom-color: #2456e5;
+.report-table th.sortable:hover {
+  color: var(--ink);
 }
 
-/* --- Reports queue -------------------------------------------------------- */
-
-.view-toggle {
-  display: flex;
-  gap: 4px;
+.sort-arrow {
+  color: var(--brand);
 }
 
-.view-toggle button {
-  background: none;
-  border: 1px solid #d5d7db;
-  border-radius: 999px;
-  padding: 3px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  color: #555;
-}
-
-.view-toggle button.active {
-  border-color: #2456e5;
-  color: #2456e5;
-}
-
-.summary-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.summary-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.summary-chip.active {
-  border-color: #2456e5;
-  box-shadow: inset 0 0 0 1px #2456e5;
-}
-
-.summary-chip .chip-label {
-  margin-left: 6px;
-  font-weight: 600;
-  color: #444;
-}
-
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.filter-bar input[type='search'] {
-  flex: 1 1 280px;
-  min-width: 220px;
-  padding: 6px 10px;
-  border: 1px solid #d5d7db;
-  border-radius: 8px;
-  font: inherit;
-}
-
-.filter-bar select {
-  padding: 6px 8px;
-  border: 1px solid #d5d7db;
-  border-radius: 8px;
-  font: inherit;
-}
-
-/* Wide table: scroll it rather than letting it stretch the page. */
-.table-scroll {
-  overflow-x: auto;
-}
-
-.report-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.report-table th,
-.report-table td {
-  border-bottom: 1px solid #eceef0;
-  padding: 8px 10px;
-  text-align: left;
-  vertical-align: top;
+/* A question whose book has since been removed — still worth showing, but it
+   cannot be opened on the site any more. */
+.report-table tr.orphaned {
+  background: color-mix(in srgb, var(--warn-bg) 55%, transparent);
 }
 
 /* Analytics columns: Requests / Year / Last raised are narrow by nature, so
@@ -501,24 +879,6 @@ button.danger {
   white-space: nowrap;
 }
 
-.report-table th.sortable {
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.report-table th.sortable:hover {
-  color: #2456e5;
-}
-
-.sort-arrow {
-  color: #2456e5;
-}
-
-.report-table tr.orphaned {
-  background: #fffaf0;
-}
-
 .comment-cell {
   max-width: 320px;
   overflow: hidden;
@@ -526,37 +886,109 @@ button.danger {
   white-space: nowrap;
 }
 
-.nowrap {
-  white-space: nowrap;
+/* ---------- expanded book detail ---------- */
+
+.detail-row td {
+  background: var(--paper);
+  padding: 16px 18px;
 }
 
+.detail-row:hover {
+  background: none;
+}
+
+.chapter-index {
+  margin-bottom: 14px;
+}
+
+.chapter-list {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+
+.videos {
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  padding: 14px 16px;
+  margin: 16px 0;
+}
+
+.warning-file {
+  margin-bottom: 14px;
+}
+
+.warning-file pre {
+  white-space: pre-wrap;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: 400 0.78rem var(--mono);
+  margin: 6px 0 0;
+}
+
+.upload-result {
+  font-size: 0.88rem;
+  margin-top: 10px;
+}
+
+.upload-errors {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+
+/* ---------- badges ---------- */
+
+.tag,
 .type-badge,
 .status-badge {
   display: inline-block;
   border-radius: 999px;
   padding: 2px 9px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font: 700 0.72rem var(--sans);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-.type-question_issue { background: #fde2e1; color: #b3261e; }
-.type-solution_issue { background: #fdeccf; color: #8a5300; }
-.type-video_request  { background: #e2ecfd; color: #1c46bd; }
+.tag {
+  background: var(--chipbg);
+  color: var(--ink-soft);
+  margin-right: 8px;
+}
 
-.status-open      { background: #e8eaed; color: #444; }
-.status-reviewing { background: #e2ecfd; color: #1c46bd; }
-.status-resolved  { background: #dff3e4; color: #1d6b33; }
-.status-dismissed { background: #eceef0; color: #888; }
+.tag-excluded {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
 
-/* --- Difficulty ratings ---------------------------------------------------- */
+.type-question_issue { background: var(--bad-bg); color: var(--bad); }
+.type-solution_issue { background: var(--warn-bg); color: var(--warn); }
+.type-video_request  { background: var(--info-bg); color: var(--info); }
 
-.rating-easy { background: #dff3e4; color: #1d6b33; }
-.rating-medium { background: #fdeccf; color: #8a5300; }
-.rating-hard { background: #fde2e1; color: #b3261e; }
+.status-open      { background: var(--chipbg); color: var(--ink-soft); }
+.status-reviewing { background: var(--info-bg); color: var(--info); }
+.status-resolved  { background: var(--ok-bg); color: var(--ok); }
+.status-dismissed { background: var(--chipbg); color: var(--ink-faint); }
 
-.rating-chip strong {
-  font-size: 1.05rem;
+.rating-easy   { background: var(--ok-bg); color: var(--ok); }
+.rating-medium { background: var(--warn-bg); color: var(--warn); }
+.rating-hard   { background: var(--bad-bg); color: var(--bad); }
+
+.demand-count {
+  display: inline-block;
+  min-width: 30px;
+  text-align: center;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font: 700 0.8rem var(--mono);
 }
 
 /* Proportional bar: reads faster than three numbers when scanning for the
@@ -564,8 +996,8 @@ button.danger {
 .spread {
   display: inline-flex;
   min-width: 120px;
-  height: 18px;
-  border-radius: 4px;
+  height: 20px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -573,235 +1005,267 @@ button.danger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  min-width: 18px;
+  font: 700 0.72rem var(--mono);
+  min-width: 20px;
 }
 
-.demand-count {
-  display: inline-block;
-  min-width: 26px;
-  text-align: center;
-  background: #2456e5;
-  color: #fff;
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-weight: 700;
+.mini-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  vertical-align: -5px;
+  margin-right: 7px;
 }
 
-/* --- Analytics sub-tabs and detail view ----------------------------------- */
+/* ---------- analytics sub-tabs, filters, summary chips ---------- */
 
 .subtabs {
   display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .subtabs button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: none;
-  border: 1px solid #d5d7db;
-  border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #555;
-  cursor: pointer;
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font: 600 13px var(--sans);
+  color: var(--ink-soft);
 }
 
-.subtabs button.active {
-  border-color: #2456e5;
-  color: #2456e5;
-  background: #f2f6ff;
+.subtabs button:hover:not(:disabled) {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+.subtabs button.active,
+.subtabs button.active:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
 .subtab-count {
-  background: #e8eaed;
+  background: var(--chipbg);
+  color: var(--ink-soft);
   border-radius: 999px;
   padding: 0 7px;
-  font-size: 0.78rem;
+  font: 600 0.75rem var(--mono);
 }
 
 .subtabs button.active .subtab-count {
-  background: #2456e5;
-  color: #fff;
+  background: color-mix(in srgb, var(--paper) 22%, transparent);
+  color: var(--paper);
 }
 
-/* --- Chapter index inside an expanded book -------------------------------- */
-
-.chapter-index {
-  margin-bottom: 10px;
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-.chapter-list {
-  margin: 2px 0 0;
-  padding-left: 20px;
-  font-size: 0.85rem;
-  line-height: 1.7;
+.filter-bar input[type='search'],
+.filter-bar select {
+  font: 400 14px var(--sans);
+  color: var(--ink);
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 11px;
+  padding: 9px 12px;
 }
 
-/* Repo names are long; keep them on one line and let the table scroll. */
-.repo-cell {
-  white-space: nowrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.8rem;
+.filter-bar input[type='search'] {
+  flex: 1 1 300px;
+  min-width: 220px;
 }
 
-.repo-cell a {
-  color: #2456e5;
-  text-decoration: none;
+.summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 14px;
 }
 
-.repo-cell a:hover {
-  text-decoration: underline;
+.summary-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 9px 15px;
+  font-size: 0.88rem;
 }
 
-.report-table tr.clickable {
-  cursor: pointer;
+.summary-chip strong {
+  font: 800 1.05rem var(--display);
 }
 
-.report-table tr.clickable:hover {
-  background: #f5f7fb;
+.summary-chip .chip-label {
+  font-weight: 600;
+  text-transform: lowercase;
 }
+
+/* A rating chip is the same shape but tinted with its own level, so easy /
+   medium / hard read as three things rather than three numbers. These need the
+   extra class because .summary-chip's own background is declared later than
+   the .rating-* palette above and would otherwise win. */
+.summary-chip.rating-easy   { background: var(--ok-bg); border-color: transparent; }
+.summary-chip.rating-medium { background: var(--warn-bg); border-color: transparent; }
+.summary-chip.rating-hard   { background: var(--bad-bg); border-color: transparent; }
+
+/* ---------- report detail view ---------- */
 
 .detail-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .detail-head h3 {
   margin: 0 0 2px;
+  font: 700 20px var(--display);
 }
 
 .detail-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 28px;
-  margin: 0 0 16px;
-  padding: 12px 14px;
-  background: #fafbfc;
-  border: 1px solid #eceef0;
-  border-radius: 10px;
+  gap: 12px 32px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
 }
 
 .detail-facts dt {
-  font-size: 0.75rem;
+  font: 600 0.7rem var(--mono);
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #888;
+  color: var(--ink-faint);
 }
 
 .detail-facts dd {
-  margin: 2px 0 0;
+  margin: 3px 0 0;
   font-weight: 600;
 }
 
-.mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85rem;
-  font-weight: 400;
+/* ---------- sign-in gate ---------- */
+
+.signin {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 14vh 24px 0;
+  text-align: center;
 }
 
-.mini-avatar {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  vertical-align: -4px;
-  margin-right: 6px;
+.signin .bm {
+  justify-content: center;
+  margin-bottom: 22px;
 }
 
-button.danger {
-  background: #b3261e;
-  border: 1px solid #b3261e;
-  border-radius: 8px;
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.85rem;
-  padding: 7px 14px;
+.signin h1 {
+  margin: 0 0 6px;
+  font: 800 28px var(--display);
+  letter-spacing: -0.03em;
+}
+
+.signin-denied {
+  background: var(--bad-bg);
+  border: 1.5px solid color-mix(in srgb, var(--bad) 35%, transparent);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 18px 0;
+  text-align: left;
+}
+
+.signin-denied p {
+  margin: 0 0 6px;
+}
+
+.signin-denied p:last-child {
+  margin-bottom: 0;
+}
+
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--card);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 11px 20px;
+  font: 600 14px var(--sans);
+  color: var(--ink);
   cursor: pointer;
-  white-space: nowrap;
 }
 
-button.danger:hover:not(:disabled) {
-  background: #8c1d17;
+.btn-google:hover:not(:disabled) {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--ink-soft);
 }
 
-button.danger:disabled {
-  opacity: 0.6;
-  cursor: default;
+/* ---------- administrators ---------- */
+
+.admin-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 16px 0 18px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .subtabs button { border-color: #3a3d47; color: #9aa0aa; }
-  .subtabs button.active { border-color: #8ab4f8; color: #8ab4f8; background: #1a2233; }
-  .subtab-count { background: #2c2f38; color: #cfd3da; }
-  .subtabs button.active .subtab-count { background: #8ab4f8; color: #14161b; }
-  .report-table tr.clickable:hover { background: #24262c; }
-  .detail-facts { background: #1a1c22; border-color: #2c2f38; }
-  .detail-facts dt { color: #8a8f98; }
+.admin-add label {
+  margin: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  .tabs { border-color: #2c2f38; }
-  .tabs button { color: #9aa0aa; }
-  .tabs button.active { color: #8ab4f8; border-bottom-color: #8ab4f8; }
-  .view-toggle button { border-color: #3a3d47; color: #9aa0aa; }
-  .view-toggle button.active { border-color: #8ab4f8; color: #8ab4f8; }
-  .summary-chip { background: #1f222a; border-color: #2c2f38; color: #e6e6e6; }
-  .summary-chip.active { border-color: #8ab4f8; box-shadow: inset 0 0 0 1px #8ab4f8; }
-  .summary-chip .chip-label { color: #cfd3da; }
-  .filter-bar input[type='search'],
-  .filter-bar select { background: #14161b; border-color: #3a3d47; color: #e6e6e6; }
-  .report-table th,
-  .report-table td { border-color: #2c2f38; }
-  .report-table th.sortable:hover { color: #8ab4f8; }
-  .sort-arrow { color: #8ab4f8; }
-  .report-table tr.orphaned { background: #2a2519; }
-  .type-question_issue { background: #4c1d1a; color: #ff8a80; }
-  .type-solution_issue { background: #3a2c14; color: #f0d9a8; }
-  .type-video_request  { background: #1e2a44; color: #8ab4f8; }
-  .status-open      { background: #2c2f38; color: #cfd3da; }
-  .status-reviewing { background: #1e2a44; color: #8ab4f8; }
-  .status-resolved  { background: #1d3524; color: #9fd8ae; }
-  .status-dismissed { background: #24262c; color: #8a8f98; }
+.admin-add input[type='email'] {
+  flex: 1 1 280px;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #16181d;
-    color: #e6e6e6;
+/* ---------- narrow windows ---------- */
+
+@media (max-width: 760px) {
+  .bar-in {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 16px;
   }
+
+  .nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .app {
+    padding: 0 16px 56px;
+  }
+
   .card {
-    background: #1f222a;
-    border-color: #2c2f38;
+    padding: 18px 16px;
   }
-  form input,
-  form select {
-    background: #14161b;
-    border-color: #3a3d47;
-    color: #e6e6e6;
+
+  .page-head {
+    padding: 24px 0 20px;
   }
-  .book-table td,
-  .book-table th {
-    border-color: #2c2f38;
+
+  .statbox {
+    width: 100%;
   }
-  .detail-row td {
-    background: #1a1c22;
-  }
-  .warning-file pre {
-    background: #3a2c14;
-    color: #f0d9a8;
-  }
-  .tag-excluded {
-    background: #4c1d1a;
-    color: #ff8a80;
-  }
-  .videos {
-    border-color: #2c2f38;
+
+  .statbox div {
+    flex: 1;
+    padding: 12px 10px;
   }
 }

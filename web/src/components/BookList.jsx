@@ -124,7 +124,7 @@ export default function BookList({ books, onChanged }) {
                 <td className={b.warningCount > 0 ? 'warn' : ''}>{b.warningCount}</td>
                 <td className="small">{formatTime(b.lastSyncedAt)}</td>
                 <td className="actions">
-                  <button onClick={() => handleSync(b.bookId)} disabled={busyId === b.bookId}>
+                  <button className="ghost" onClick={() => handleSync(b.bookId)} disabled={busyId === b.bookId}>
                     Re-sync
                   </button>
                   <button className="danger" onClick={() => handleDelete(b.bookId)} disabled={busyId === b.bookId}>
