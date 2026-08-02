@@ -186,6 +186,100 @@ function questionKey(report) {
   return `${report.bookId}::${report.fileId}|${report.year}|${report.questionNum}`;
 }
 
+// Collapses difficulty ratings per question into a distribution plus a single
+// verdict. Counted by distinct user for the same reason the report groups are:
+// one person changing their mind is not two opinions — and since a re-rating
+// replaces the old row, each user appears at most once per question anyway.
+function groupRatings(ratings) {
+  const groups = new Map();
+
+  for (const rating of ratings) {
+    const key = questionKey(rating);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        bookId: rating.bookId,
+        fileId: rating.fileId,
+        year: rating.year,
+        questionNum: rating.questionNum,
+        questionId: rating.questionId || null,
+        subject: rating.subject,
+        repo: rating.repo,
+        bookLabel: rating.bookLabel,
+        chapterLabel: rating.chapterLabel,
+        ordinal: rating.ordinal || null,
+        orphaned: rating.orphaned,
+        easy: 0,
+        medium: 0,
+        hard: 0,
+        ratingCount: 0,
+        latestAt: rating.updatedAt || rating.createdAt
+      });
+    }
+    const group = groups.get(key);
+    if (group[rating.rating] === undefined) {
+      continue;
+    }
+    group[rating.rating] += 1;
+    group.ratingCount += 1;
+    const at = rating.updatedAt || rating.createdAt;
+    if (at > group.latestAt) {
+      group.latestAt = at;
+    }
+  }
+
+  return [...groups.values()].map((group) => ({ ...group, ...verdictFor(group) }));
+}
+
+// A single number so the table can be sorted by "how hard": easy=1, hard=3.
+// The consensus is simply the most-chosen level, with ties resolved towards
+// the harder one — a question half the readers found hard is worth surfacing.
+function verdictFor({ easy, medium, hard, ratingCount }) {
+  if (!ratingCount) {
+    return { consensus: null, difficultyScore: 0 };
+  }
+  const difficultyScore = Number(((easy * 1 + medium * 2 + hard * 3) / ratingCount).toFixed(2));
+  const ordered = [
+    ['hard', hard],
+    ['medium', medium],
+    ['easy', easy]
+  ].sort((a, b) => b[1] - a[1]);
+  return { consensus: ordered[0][0], difficultyScore };
+}
+
+const RATING_SORT_FIELDS = new Set([
+  'ratingCount',
+  'difficultyScore',
+  'consensus',
+  'subject',
+  'repo',
+  'bookLabel',
+  'chapterLabel',
+  'questionId',
+  'questionNum',
+  'year',
+  'latestAt',
+  'easy',
+  'medium',
+  'hard'
+]);
+
+function sortRatingGroups(groups, sort, dir = 'desc') {
+  const field = RATING_SORT_FIELDS.has(sort) ? sort : 'ratingCount';
+  const factor = dir === 'asc' ? 1 : -1;
+  return groups.slice().sort((a, b) => {
+    const primary = compareValues(a[field], b[field]);
+    if (primary !== 0) {
+      return primary * factor;
+    }
+    const recency = compareValues(a.latestAt, b.latestAt);
+    if (recency !== 0) {
+      return -recency;
+    }
+    return compareValues(a.key, b.key);
+  });
+}
+
 const GROUP_SORT_FIELDS = new Set([
   'requestCount',
   'subject',
@@ -262,6 +356,8 @@ module.exports = {
   sortReports,
   groupByQuestion,
   sortGroups,
+  groupRatings,
+  sortRatingGroups,
   questionKey,
   summarise,
   facets,

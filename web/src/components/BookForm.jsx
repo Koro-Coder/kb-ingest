@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { listSubjects } from '../api.js';
 
-const SUBJECTS = [
-  { value: 'aptitude', label: 'Aptitude' },
-  { value: 'maths', label: 'Maths' },
-  { value: 'technical', label: 'Technical' }
-];
+// Only a fallback for the moment before the fetch lands — the real list comes
+// from the server, so the dropdown can never drift from what the parser
+// actually accepts.
+const FALLBACK_SUBJECTS = [{ key: 'aptitude', label: 'Aptitude', requiresDomainBranch: false }];
 
 const initialState = {
   repoUrl: '',
@@ -21,6 +21,21 @@ const initialState = {
 
 export default function BookForm({ onSubmit, submitting, error }) {
   const [form, setForm] = useState(initialState);
+  const [subjects, setSubjects] = useState(FALLBACK_SUBJECTS);
+
+  useEffect(() => {
+    listSubjects()
+      .then((list) => {
+        if (list.length) setSubjects(list);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Whether domain/branch are needed follows the subject's repo layout, so it
+  // comes from the server alongside the list rather than being a hardcoded
+  // check for one subject name.
+  const selected = subjects.find((s) => s.key === form.subject);
+  const needsDomainBranch = Boolean(selected && selected.requiresDomainBranch);
 
   const update = (field) => (event) => setForm((f) => ({ ...f, [field]: event.target.value }));
 
@@ -55,8 +70,8 @@ export default function BookForm({ onSubmit, submitting, error }) {
         <label>
           Subject
           <select value={form.subject} onChange={update('subject')}>
-            {SUBJECTS.map((s) => (
-              <option key={s.value} value={s.value}>
+            {subjects.map((s) => (
+              <option key={s.key} value={s.key}>
                 {s.label}
               </option>
             ))}
@@ -79,7 +94,7 @@ export default function BookForm({ onSubmit, submitting, error }) {
         />
       </label>
 
-      {form.subject === 'technical' && (
+      {needsDomainBranch && (
         <div className="row">
           <label>
             Domain

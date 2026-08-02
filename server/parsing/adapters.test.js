@@ -242,6 +242,54 @@ The terminal voltage is \[ V = 10 - I \tag{1} \] and the load is \[ 7I = V^2 + 2
   assert.ok(tagged[1].value.includes('V^2'), 'the exponent must stay inside the math node');
 });
 
+// Nexus X, Silicon X and Power X all use the technical repo LAYOUT. If any of
+// them drifts, a book registered under one parses or navigates differently
+// from the others it was meant to mirror.
+test('the three X subjects resolve to the technical layout', () => {
+  const { profileForSubject, requiresDomainBranch, listSubjects } = require('./adapters');
+
+  for (const subject of ['nexus_x', 'silicon_x', 'power_x']) {
+    assert.equal(profileForSubject(subject), technical.id, `${subject} must use the technical parser`);
+    assert.equal(requiresDomainBranch(subject), true, `${subject} must require domain and branch`);
+  }
+
+  const labels = Object.fromEntries(listSubjects().map((s) => [s.key, s.label]));
+  assert.equal(labels.nexus_x, 'Nexus X');
+  assert.equal(labels.silicon_x, 'Silicon X');
+  assert.equal(labels.power_x, 'Power X');
+});
+
+// The layout is still called "technical" — that names a repo shape — but no
+// book can be filed under a subject of that name any more.
+test('"technical" is no longer a subject, though its layout lives on', () => {
+  const { profileForSubject, listSubjects, registry } = require('./adapters');
+
+  assert.deepEqual(listSubjects().map((s) => s.key), ['aptitude', 'maths', 'nexus_x', 'silicon_x', 'power_x']);
+  assert.throws(() => profileForSubject('technical'), /Unknown subject/);
+  assert.ok(registry[technical.id], 'the technical adapter itself must remain');
+});
+
+test('the remaining original subjects keep their layouts, and an unknown one throws', () => {
+  const { profileForSubject, requiresDomainBranch } = require('./adapters');
+
+  assert.equal(requiresDomainBranch('aptitude'), false);
+  assert.equal(requiresDomainBranch('maths'), false);
+  assert.throws(() => profileForSubject('no_such_subject'), /Unknown subject/);
+});
+
+// The point of the three is separate shelves, not separate parsing.
+test('a tex file parses identically whichever X subject it is filed under', () => {
+  const { getAdapter, profileForSubject } = require('./adapters');
+  const tex = fs.readFileSync(path.join(__dirname, '__fixtures__', 'tech_ee_ch1.tex'), 'utf8');
+
+  const baseline = parseQuestions(tex, technical, { chapterFolder: '' });
+  for (const subject of ['nexus_x', 'silicon_x', 'power_x']) {
+    const result = parseQuestions(tex, getAdapter(profileForSubject(subject)), { chapterFolder: '' });
+    assert.deepEqual(result.questions, baseline.questions, `${subject} parsed differently`);
+    assert.deepEqual(result.warnings, baseline.warnings, `${subject} warned differently`);
+  }
+});
+
 test('a real-world data table renders, with styling commands stripped from cells', () => {
   // The exact question that originally surfaced this: \centering and
   // \arraybackslash are layout noise and must not leak into cell text, while

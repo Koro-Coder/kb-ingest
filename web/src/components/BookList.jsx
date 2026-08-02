@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from 'react';
-import { getBook, syncBook, deleteBook } from '../api.js';
+import { getBook, syncBook, deleteBook, uploadVideosCsv, downloadCsv } from '../api.js';
 
 function formatTime(iso) {
   if (!iso) return '—';
@@ -185,9 +185,14 @@ function BookDetail({ book }) {
         <div className="warnings">
           <div className="section-head">
             <h4>Warnings</h4>
-            <a className="button-link" href={`/api/books/${book.bookId}/warnings.csv`} download>
+            <button
+              className="button-link"
+              onClick={() =>
+                downloadCsv(`/api/books/${book.bookId}/warnings.csv`, `${book.bookId}-warnings.csv`)
+              }
+            >
               Download this book's warnings (CSV)
-            </a>
+            </button>
           </div>
           {filesWithWarnings.map((f) => (
             <div key={f.fileId} className="warning-file">
@@ -226,14 +231,7 @@ function VideoLinks({ book }) {
     setStatus(null);
     try {
       const text = await file.text();
-      const res = await fetch(`/api/books/${book.bookId}/videos.csv`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/csv' },
-        body: text
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
-      setStatus(data);
+      setStatus(await uploadVideosCsv(book.bookId, text));
     } catch (error) {
       setStatus({ errors: [error.message], applied: 0, cleared: 0, skipped: 0 });
     } finally {
@@ -248,9 +246,12 @@ function VideoLinks({ book }) {
       <div className="section-head">
         <h4>Solution videos</h4>
         <div className="actions">
-          <a className="button-link" href={`/api/books/${book.bookId}/videos.csv`} download>
+          <button
+            className="button-link"
+            onClick={() => downloadCsv(`/api/books/${book.bookId}/videos.csv`, `${book.bookId}-videos.csv`)}
+          >
             Download video CSV
-          </a>
+          </button>
           <button onClick={() => inputRef.current && inputRef.current.click()} disabled={busy}>
             {busy ? 'Uploading…' : 'Upload filled CSV'}
           </button>

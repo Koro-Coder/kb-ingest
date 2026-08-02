@@ -2,11 +2,13 @@ const express = require('express');
 const github = require('../github/client');
 const kbStore = require('../store/kbStore');
 const { syncBook, slugifyBookId } = require('../parsing/ingest');
-const { profileForSubject } = require('../parsing/adapters');
+const { profileForSubject, requiresDomainBranch, listSubjects } = require('../parsing/adapters');
 const { buildWarningsCsv } = require('../warningsCsv');
 const { buildVideosCsv, applyVideosCsv } = require('../videosCsv');
 const videoStore = require('../store/videoStore');
 const reportStore = require('../store/reportStore');
+const notificationStore = require('../store/notificationStore');
+const { notificationsFor } = require('../notifications');
 
 const router = express.Router();
 
@@ -43,6 +45,13 @@ router.get('/', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// Declared before '/:bookId' so the literal path isn't swallowed by the
+// parameterised route. Lets the admin UI build its dropdown from the same list
+// the parser uses, instead of hardcoding one that can drift.
+router.get('/subjects', (req, res) => {
+  res.json(listSubjects().map((s) => ({ ...s, requiresDomainBranch: requiresDomainBranch(s.key) })));
 });
 
 function sendCsv(res, filename, csv) {
@@ -107,14 +116,19 @@ router.post('/:bookId/videos.csv', async (req, res) => {
       const [fileId, year, questionNum] = key.split('|');
       return { fileId, year, questionNum };
     });
-    const clearedRequests = await reportStore.deleteVideoRequestsFor(req.params.bookId, answered);
+    const clearedReports = await reportStore.deleteVideoRequestsFor(req.params.bookId, answered);
+    // Everyone who asked for one of these videos hears that it now exists.
+    const notified = await notificationStore.createMany(
+      notificationsFor(clearedReports, new Date().toISOString())
+    );
 
     res.json({
       applied: result.applied,
       cleared: result.cleared,
       skipped: result.skipped,
       totalWithVideo: Object.keys(result.videos).length,
-      clearedVideoRequests: clearedRequests,
+      clearedVideoRequests: clearedReports.length,
+      notified,
       errors: result.errors.slice(0, 25)
     });
   } catch (error) {
@@ -171,8 +185,10 @@ router.post('/', async (req, res) => {
     res.status(400).json({ error: 'repoUrl and subject are required' });
     return;
   }
-  if (subject === 'technical' && (!domain || !branch)) {
-    res.status(400).json({ error: 'domain and branch are required for technical books' });
+  // Derived from the subject's layout, not hardcoded to 'technical', so the
+  // subjects that share that layout inherit the same requirement.
+  if (requiresDomainBranch(subject) && (!domain || !branch)) {
+    res.status(400).json({ error: `domain and branch are required for ${subject} books` });
     return;
   }
 

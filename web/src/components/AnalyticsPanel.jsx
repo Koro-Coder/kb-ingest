@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listReportedQuestions, getReportSummary } from '../api.js';
 import QuestionReportDetail from './QuestionReportDetail.jsx';
+import RatingsPanel from './RatingsPanel.jsx';
 
 // The three analytics tables. They differ only in which report type they show
 // and whether they offer the resolve action, so they share one component.
 const TABS = [
   { type: 'question_issue', label: 'Question reported' },
   { type: 'solution_issue', label: 'Solution reported' },
-  { type: 'video_request', label: 'Video requested' }
+  { type: 'video_request', label: 'Video requested' },
+  // Not a report type — ratings are observations rather than a queue — so it
+  // renders its own panel instead of the grouped-reports table.
+  { type: 'ratings', label: 'Question ratings' }
 ];
 
 // Domain and branch are deliberately absent: only technical books have them,
@@ -50,7 +54,12 @@ export default function AnalyticsPanel() {
       .catch(() => {});
   }, []);
 
+  const isRatings = type === 'ratings';
+
   const refresh = useCallback(async () => {
+    if (isRatings) {
+      return;
+    }
     setLoading(true);
     try {
       setData(await listReportedQuestions({ type, ...filters, sort, dir }));
@@ -60,7 +69,7 @@ export default function AnalyticsPanel() {
     } finally {
       setLoading(false);
     }
-  }, [type, filters, sort, dir]);
+  }, [isRatings, type, filters, sort, dir]);
 
   useEffect(() => {
     refresh();
@@ -89,7 +98,10 @@ export default function AnalyticsPanel() {
     setDir('desc');
   };
 
-  const facets = (data && data.facets) || { subjects: [], books: [] };
+  // The ratings panel reports its own facets, so the shared filter bar offers
+  // the right books whichever tab is open.
+  const [ratingFacets, setRatingFacets] = useState(null);
+  const facets = (isRatings ? ratingFacets : data && data.facets) || { subjects: [], books: [] };
   const hasFilters = filters.search || filters.subject || filters.bookId;
 
   if (selected) {
@@ -120,6 +132,9 @@ export default function AnalyticsPanel() {
             {tab.label}
             {summary && summary[tab.type] && (
               <span className="subtab-count">{summary[tab.type].questions}</span>
+            )}
+            {tab.type === 'ratings' && ratingFacets && ratingFacets.ratedQuestions !== undefined && (
+              <span className="subtab-count">{ratingFacets.ratedQuestions}</span>
             )}
           </button>
         ))}
@@ -158,7 +173,11 @@ export default function AnalyticsPanel() {
       {error && <p className="error">{error}</p>}
       {loading && !data && <p className="muted">Loading…</p>}
 
-      {data && (
+      {isRatings && (
+        <RatingsPanel filters={filters} onFacets={setRatingFacets} />
+      )}
+
+      {!isRatings && data && (
         <>
           <p className="muted small">
             {data.matchedQuestions} question{data.matchedQuestions === 1 ? '' : 's'}

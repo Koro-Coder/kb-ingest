@@ -262,6 +262,94 @@ button.danger {
   color: #b3261e;
 }
 
+/* --- Sign-in gate and account bar ----------------------------------------- */
+
+.signin {
+  max-width: 460px;
+  text-align: center;
+  padding-top: 80px;
+}
+
+.signin-denied {
+  background: #fdf1f0;
+  border: 1px solid #f3c9c6;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.account-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 32px;
+  font-size: 0.9rem;
+}
+
+.account-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #444;
+}
+
+.avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #3c4043;
+  cursor: pointer;
+}
+
+.btn-google:hover {
+  background: #f7f8f8;
+}
+
+.admin-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.admin-add input[type='email'] {
+  flex: 1 1 260px;
+  padding: 7px 10px;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.admin-add select {
+  padding: 7px 8px;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+  font: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .signin-denied { background: #3a1f1d; border-color: #5c2d29; }
+  .account-user { color: #cfd3da; }
+  .btn-google { background: #1f222a; border-color: #3a3d47; color: #e6e6e6; }
+  .btn-google:hover { background: #262a33; }
+  .admin-add input[type='email'],
+  .admin-add select { background: #14161b; border-color: #3a3d47; color: #e6e6e6; }
+}
+
 /* --- Tabs ----------------------------------------------------------------- */
 
 .tabs {
@@ -460,6 +548,35 @@ button.danger {
 .status-reviewing { background: #e2ecfd; color: #1c46bd; }
 .status-resolved  { background: #dff3e4; color: #1d6b33; }
 .status-dismissed { background: #eceef0; color: #888; }
+
+/* --- Difficulty ratings ---------------------------------------------------- */
+
+.rating-easy { background: #dff3e4; color: #1d6b33; }
+.rating-medium { background: #fdeccf; color: #8a5300; }
+.rating-hard { background: #fde2e1; color: #b3261e; }
+
+.rating-chip strong {
+  font-size: 1.05rem;
+}
+
+/* Proportional bar: reads faster than three numbers when scanning for the
+   questions readers disagree about. */
+.spread {
+  display: inline-flex;
+  min-width: 120px;
+  height: 18px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.spread-part {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 18px;
+}
 
 .demand-count {
   display: inline-block;

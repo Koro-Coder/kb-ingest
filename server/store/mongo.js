@@ -16,7 +16,19 @@ const COLLECTIONS = {
   reports: 'reports',
   // Read-only here: kb-website owns sign-in. Used only to show an admin who
   // filed a report.
-  users: 'users'
+  users: 'users',
+  // Who may sign in to THIS portal, keyed by email. Deliberately separate from
+  // `users`: that collection is everyone who ever signed in to the public
+  // site, and admin access must never be a side effect of that.
+  admins: 'admins',
+  adminSessions: 'adminSessions',
+  // Written by kb-website when a reader rates a question's difficulty. Read
+  // only here, for the analytics.
+  ratings: 'ratings',
+  // Written HERE when a report is resolved, read by kb-website's bell menu.
+  // Resolving is the only thing that tells a reader their report was acted on,
+  // so it is also the only thing that creates one.
+  notifications: 'notifications'
 };
 
 let clientPromise = null;
@@ -71,6 +83,14 @@ async function ensureIndexes() {
   // everything filed against one question.
   await db.collection(COLLECTIONS.reports).createIndex({ status: 1, type: 1, createdAt: -1 });
   await db.collection(COLLECTIONS.reports).createIndex({ bookId: 1, fileId: 1, year: 1, questionNum: 1 });
+  // _id is the lowercased email, so uniqueness is free; this index backs the
+  // "is there still an owner?" check that guards against locking everyone out.
+  await db.collection(COLLECTIONS.admins).createIndex({ role: 1 });
+  // How the bell menu reads them: this user's newest first, unread first.
+  await db.collection(COLLECTIONS.notifications).createIndex({ userId: 1, createdAt: -1 });
+  await db.collection(COLLECTIONS.notifications).createIndex({ userId: 1, readAt: 1 });
+  await db.collection(COLLECTIONS.adminSessions).createIndex({ familyId: 1 });
+  await db.collection(COLLECTIONS.adminSessions).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 }
 
 async function ping() {

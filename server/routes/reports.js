@@ -1,6 +1,9 @@
 const express = require('express');
 const kbStore = require('../store/kbStore');
 const reportStore = require('../store/reportStore');
+const ratingStore = require('../store/ratingStore');
+const notificationStore = require('../store/notificationStore');
+const { notificationsFor } = require('../notifications');
 const userStore = require('../store/userStore');
 const videoStore = require('../store/videoStore');
 const {
@@ -8,6 +11,8 @@ const {
   filterReports,
   groupByQuestion,
   sortGroups,
+  groupRatings,
+  sortRatingGroups,
   facets,
   summarise,
   TYPE_LABELS
@@ -88,14 +93,53 @@ async function dropAnsweredVideoRequests(reports) {
       }
       byBookId.get(report.bookId).push(report);
     }
-    await Promise.all(
+    const removedGroups = await Promise.all(
       [...byBookId.entries()].map(([bookId, group]) => reportStore.deleteVideoRequestsFor(bookId, group))
     );
+    // Same outcome as an explicit resolve — the video they asked for exists —
+    // so it earns the same notification.
+    const at = new Date().toISOString();
+    for (const removed of removedGroups) {
+      await notificationStore.createMany(notificationsFor(removed, at));
+    }
   }
 
   const answeredIds = new Set(answered.map((r) => r.id));
   return reports.filter((r) => !answeredIds.has(r.id));
 }
+
+// Difficulty ratings, collapsed per question. Same filters and enrichment as
+// the report tables, so the four analytics tabs behave alike.
+router.get('/ratings', async (req, res, next) => {
+  try {
+    const ratings = await ratingStore.listAll();
+    const enriched = await enrichAll(ratings);
+    const matched = filterReports(enriched, {
+      subject: req.query.subject,
+      bookId: req.query.bookId,
+      search: req.query.search
+    });
+
+    const groups = groupRatings(matched);
+    const all = groupRatings(enriched);
+    res.json({
+      totalRatings: enriched.length,
+      totalQuestions: all.length,
+      matchedQuestions: groups.length,
+      totals: {
+        easy: enriched.filter((r) => r.rating === 'easy').length,
+        medium: enriched.filter((r) => r.rating === 'medium').length,
+        hard: enriched.filter((r) => r.rating === 'hard').length
+      },
+      // ratedQuestions rides along on the facets so the tab badge has a count
+      // without a second round trip.
+      facets: { ...facets(enriched), ratedQuestions: all.length },
+      questions: sortRatingGroups(groups, req.query.sort, req.query.dir === 'asc' ? 'asc' : 'desc')
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // GET /api/reports/questions?type=&search=&subject=&bookId=&sort=&dir=
 // One row per question, counted by distinct user — the shape all three
@@ -210,12 +254,19 @@ router.delete('/question', async (req, res, next) => {
     return;
   }
   try {
-    const deleted = await reportStore.deleteForQuestion(type, { bookId, fileId, year, questionNum });
-    if (!deleted) {
+    const removed = await reportStore.deleteForQuestion(type, { bookId, fileId, year, questionNum });
+    if (!removed.length) {
       res.status(404).json({ error: 'No reports for that question' });
       return;
     }
-    res.json({ deleted });
+
+    // Resolving is the only signal a reader gets that their report was acted
+    // on, so it is what creates the notification.
+    const notified = await notificationStore.createMany(
+      notificationsFor(removed, new Date().toISOString())
+    );
+
+    res.json({ deleted: removed.length, notified });
   } catch (error) {
     next(error);
   }

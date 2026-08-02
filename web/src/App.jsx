@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import BookForm from './components/BookForm.jsx';
 import BookList from './components/BookList.jsx';
 import AnalyticsPanel from './components/AnalyticsPanel.jsx';
-import { listBooks, registerBook } from './api.js';
+import AdminsPanel from './components/AdminsPanel.jsx';
+import { listBooks, registerBook, downloadCsv } from './api.js';
+import { useAuth } from './auth.jsx';
 
 export default function App() {
+  const { user, isOwner, signOut } = useAuth();
   const [tab, setTab] = useState('books');
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +51,21 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="account-bar">
+        {user && (
+          <>
+            <span className="account-user" title={user.email}>
+              {user.avatarUrl && <img className="avatar" src={user.avatarUrl} alt="" />}
+              {user.name || user.email}
+            </span>
+            <span className={`status-badge status-${isOwner ? 'reviewing' : 'open'}`}>{user.role}</span>
+            <button className="link" onClick={signOut}>
+              Sign out
+            </button>
+          </>
+        )}
+      </div>
+
       <header>
         <h1>PrepFusion Knowledge Base — Ingest</h1>
         <p className="muted">
@@ -62,6 +80,13 @@ export default function App() {
         <button className={tab === 'analytics' ? 'active' : ''} onClick={() => setTab('analytics')}>
           Analytics
         </button>
+        {/* Owner-only. The server refuses the underlying routes regardless, so
+            hiding the tab is convenience, not the control. */}
+        {isOwner && (
+          <button className={tab === 'admins' ? 'active' : ''} onClick={() => setTab('admins')}>
+            Administrators
+          </button>
+        )}
       </nav>
 
       {tab === 'books' && (
@@ -72,9 +97,14 @@ export default function App() {
             <div className="section-head">
               <h2>Registered books</h2>
               {totalWarnings > 0 && (
-                <a className="button-link" href="/api/books/warnings.csv" download>
+                // Fetched with the bearer token rather than a plain href — the
+                // browser would follow that link unauthenticated and get a 401.
+                <button
+                  className="button-link"
+                  onClick={() => downloadCsv('/api/books/warnings.csv', 'prepfusion-warnings.csv')}
+                >
                   Download all warnings (CSV)
-                </a>
+                </button>
               )}
             </div>
             {loading && <p className="muted">Loading…</p>}
@@ -85,6 +115,7 @@ export default function App() {
       )}
 
       {tab === 'analytics' && <AnalyticsPanel />}
+      {tab === 'admins' && isOwner && <AdminsPanel />}
     </div>
   );
 }

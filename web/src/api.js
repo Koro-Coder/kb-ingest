@@ -1,5 +1,14 @@
 const BASE = '/api/books';
 
+// Every call now needs the admin bearer token. Rather than thread authFetch
+// through every component, the AuthProvider registers it here once — it also
+// handles refreshing an expired token and retrying.
+let authFetch = (path, options) => fetch(path, options);
+
+export function setAuthFetch(fn) {
+  authFetch = fn;
+}
+
 async function handle(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -8,30 +17,13 @@ async function handle(res) {
   return data;
 }
 
-export function listBooks() {
-  return fetch(BASE).then(handle);
+function request(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+  return authFetch(path, { ...options, headers });
 }
-
-export function getBook(bookId) {
-  return fetch(`${BASE}/${bookId}`).then(handle);
-}
-
-export function registerBook(payload) {
-  return fetch(BASE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then(handle);
-}
-
-export function syncBook(bookId) {
-  return fetch(`${BASE}/${bookId}/sync`, { method: 'POST' }).then(handle);
-}
-
-// --- Analytics -------------------------------------------------------------
-// Grouping, filtering, search and sort all happen server-side, because
-// searching by book or chapter label means searching fields the report itself
-// never stored — they are joined from the catalog at read time.
 
 function queryString(params = {}) {
   const query = new URLSearchParams();
@@ -43,30 +35,104 @@ function queryString(params = {}) {
   return query.toString() ? `?${query}` : '';
 }
 
-// One row per question, counted by distinct user.
-export function listReportedQuestions(params = {}) {
-  return fetch(`/api/reports/questions${queryString(params)}`).then(handle);
+// --- Books -----------------------------------------------------------------
+
+export function listBooks() {
+  return request(BASE).then(handle);
 }
 
-export function getReportSummary() {
-  return fetch('/api/reports/summary').then(handle);
+export function getBook(bookId) {
+  return request(`${BASE}/${bookId}`).then(handle);
 }
 
-// Everything behind one row: who filed it, when, and what they wrote.
-export function getQuestionReports(params) {
-  return fetch(`/api/reports/question${queryString(params)}`).then(handle);
+// The subjects the parser actually supports, so the form cannot offer one the
+// server would reject.
+export function listSubjects() {
+  return request(`${BASE}/subjects`).then(handle);
 }
 
-// "Resolved" — deletes every report of this type for this question. There is
-// no undo.
-export function resolveQuestionReports(params) {
-  return fetch(`/api/reports/question${queryString(params)}`, { method: 'DELETE' }).then(handle);
+export function registerBook(payload) {
+  return request(BASE, { method: 'POST', body: JSON.stringify(payload) }).then(handle);
+}
+
+export function syncBook(bookId) {
+  return request(`${BASE}/${bookId}/sync`, { method: 'POST' }).then(handle);
 }
 
 export function deleteBook(bookId) {
-  return fetch(`${BASE}/${bookId}`, { method: 'DELETE' }).then((res) => {
+  return request(`${BASE}/${bookId}`, { method: 'DELETE' }).then((res) => {
     if (!res.ok && res.status !== 204) {
       throw new Error(`Delete failed (${res.status})`);
     }
   });
+}
+
+// CSV upload posts raw text, so it sets its own content type.
+export function uploadVideosCsv(bookId, text) {
+  return request(`${BASE}/${bookId}/videos.csv`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/csv' },
+    body: text
+  }).then(handle);
+}
+
+// A download has to carry the token too, so it is fetched and turned into a
+// blob rather than being a plain <a href> the browser fetches unauthenticated.
+export async function downloadCsv(path, filename) {
+  const res = await request(path);
+  if (!res.ok) {
+    throw new Error(`Download failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// --- Analytics -------------------------------------------------------------
+
+export function listReportedQuestions(params = {}) {
+  return request(`/api/reports/questions${queryString(params)}`).then(handle);
+}
+
+export function listRatedQuestions(params = {}) {
+  return request(`/api/reports/ratings${queryString(params)}`).then(handle);
+}
+
+export function getReportSummary() {
+  return request('/api/reports/summary').then(handle);
+}
+
+export function getQuestionReports(params) {
+  return request(`/api/reports/question${queryString(params)}`).then(handle);
+}
+
+export function resolveQuestionReports(params) {
+  return request(`/api/reports/question${queryString(params)}`, { method: 'DELETE' }).then(handle);
+}
+
+// --- Administrators (owner only) -------------------------------------------
+
+export function listAdmins() {
+  return request('/api/admins').then(handle);
+}
+
+export function grantAdmin({ email, role }) {
+  return request('/api/admins', { method: 'POST', body: JSON.stringify({ email, role }) }).then(handle);
+}
+
+export function setAdminRole(email, role) {
+  return request(`/api/admins/${encodeURIComponent(email)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role })
+  }).then(handle);
+}
+
+export function removeAdmin(email) {
+  return request(`/api/admins/${encodeURIComponent(email)}`, { method: 'DELETE' }).then(handle);
 }

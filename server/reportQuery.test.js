@@ -6,6 +6,8 @@ const {
   sortReports,
   groupByQuestion,
   sortGroups,
+  groupRatings,
+  sortRatingGroups,
   summarise,
   facets
 } = require('./reportQuery');
@@ -399,4 +401,117 @@ test('domain and branch are not offered as filters', () => {
 test('domain remains reachable through free-text search', () => {
   const reports = [enriched(), enriched({ id: 'b', bookId: 'nt_ee' }, NT_BOOK, 'Basic Concepts')];
   assert.deepEqual(filterReports(reports, { search: 'network theory' }).map((r) => r.id), ['b']);
+});
+
+// ---------------------------------------------------------------------------
+// Difficulty ratings
+// ---------------------------------------------------------------------------
+
+function rating(overrides = {}) {
+  return enrichReport(
+    {
+      id: overrides.id || 'x1',
+      userId: overrides.userId || 'u1',
+      rating: 'easy',
+      bookId: 'de_ec',
+      fileId: 'ch1_logic_gates',
+      year: 2022,
+      questionNum: 1,
+      questionId: '1.22.1',
+      updatedAt: '2026-08-01T10:00:00.000Z',
+      ...overrides
+    },
+    { bookSummary: DE_BOOK, chapterLabel: 'Logic Gates' }
+  );
+}
+
+test('ratings collapse per question into a distribution', () => {
+  const groups = groupRatings([
+    rating({ id: 'a', userId: 'u1', rating: 'easy' }),
+    rating({ id: 'b', userId: 'u2', rating: 'hard' }),
+    rating({ id: 'c', userId: 'u3', rating: 'hard' })
+  ]);
+
+  assert.equal(groups.length, 1);
+  assert.equal(groups[0].easy, 1);
+  assert.equal(groups[0].medium, 0);
+  assert.equal(groups[0].hard, 2);
+  assert.equal(groups[0].ratingCount, 3);
+});
+
+test('the consensus is the most-chosen level', () => {
+  const [group] = groupRatings([
+    rating({ id: 'a', userId: 'u1', rating: 'medium' }),
+    rating({ id: 'b', userId: 'u2', rating: 'medium' }),
+    rating({ id: 'c', userId: 'u3', rating: 'easy' })
+  ]);
+  assert.equal(group.consensus, 'medium');
+});
+
+// A question half the readers found hard is worth surfacing, so a tie leans
+// towards the harder verdict rather than the gentler one.
+test('a tied vote resolves towards the harder level', () => {
+  const [group] = groupRatings([
+    rating({ id: 'a', userId: 'u1', rating: 'easy' }),
+    rating({ id: 'b', userId: 'u2', rating: 'hard' })
+  ]);
+  assert.equal(group.consensus, 'hard');
+});
+
+test('the difficulty score spans 1 (all easy) to 3 (all hard)', () => {
+  const allEasy = groupRatings([rating({ id: 'a', userId: 'u1', rating: 'easy' })]);
+  const allHard = groupRatings([rating({ id: 'b', userId: 'u2', rating: 'hard' })]);
+  const mixed = groupRatings([
+    rating({ id: 'c', userId: 'u1', rating: 'easy' }),
+    rating({ id: 'd', userId: 'u2', rating: 'hard' })
+  ]);
+
+  assert.equal(allEasy[0].difficultyScore, 1);
+  assert.equal(allHard[0].difficultyScore, 3);
+  assert.equal(mixed[0].difficultyScore, 2);
+});
+
+test('two different questions stay two rows', () => {
+  const groups = groupRatings([
+    rating({ id: 'a', userId: 'u1', questionNum: 1 }),
+    rating({ id: 'b', userId: 'u1', questionNum: 2 })
+  ]);
+  assert.equal(groups.length, 2);
+});
+
+test('an unrecognised rating value is ignored rather than counted', () => {
+  const [group] = groupRatings([
+    rating({ id: 'a', userId: 'u1', rating: 'easy' }),
+    rating({ id: 'b', userId: 'u2', rating: 'impossible' })
+  ]);
+  assert.equal(group.ratingCount, 1);
+});
+
+test('rating rows carry the enriched labels the table shows', () => {
+  const [group] = groupRatings([rating()]);
+  assert.equal(group.bookLabel, 'PrepFusion Digital Electronics EC');
+  assert.equal(group.chapterLabel, 'Logic Gates');
+  assert.equal(group.repo, 'prepfusiongatepyq/PrepFusion_Digital_Electronics_EC_V1');
+});
+
+test('rating groups sort by count and by difficulty, both directions', () => {
+  const groups = groupRatings([
+    rating({ id: 'a', userId: 'u1', questionNum: 1, rating: 'easy' }),
+    rating({ id: 'b', userId: 'u1', questionNum: 2, rating: 'hard' }),
+    rating({ id: 'c', userId: 'u2', questionNum: 2, rating: 'hard' })
+  ]);
+
+  assert.deepEqual(sortRatingGroups(groups, 'ratingCount', 'desc').map((g) => g.ratingCount), [2, 1]);
+  assert.deepEqual(sortRatingGroups(groups, 'ratingCount', 'asc').map((g) => g.ratingCount), [1, 2]);
+  assert.equal(sortRatingGroups(groups, 'difficultyScore', 'desc')[0].consensus, 'hard');
+  assert.equal(sortRatingGroups(groups, 'difficultyScore', 'asc')[0].consensus, 'easy');
+});
+
+test('an unknown rating sort falls back to the count', () => {
+  const groups = groupRatings([
+    rating({ id: 'a', userId: 'u1', questionNum: 1 }),
+    rating({ id: 'b', userId: 'u1', questionNum: 2 }),
+    rating({ id: 'c', userId: 'u2', questionNum: 2 })
+  ]);
+  assert.equal(sortRatingGroups(groups, 'nonsense', 'desc')[0].ratingCount, 2);
 });

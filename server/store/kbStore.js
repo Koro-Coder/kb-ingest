@@ -56,6 +56,21 @@ async function writeSubjects(list) {
       )
     )
   );
+  // Subjects no longer declared in code are removed, so the code stays the
+  // single source of truth. Without this a deleted subject lingers in the
+  // collection and the site keeps listing it while its tree 404s.
+  const removed = await subjects.deleteMany({ _id: { $nin: list.map((s) => s.key) } });
+  return removed.deletedCount;
+}
+
+// Books whose subject no longer exists. They stay in the collection — silently
+// deleting someone's book because a subject was renamed would be far worse —
+// but they are invisible on the site, so startup says so out loud.
+async function findOrphanedBooks(knownSubjectKeys) {
+  const books = await collection(COLLECTIONS.books);
+  return books
+    .find({ subject: { $nin: knownSubjectKeys } }, { projection: { _id: 1, subject: 1, label: 1 } })
+    .toArray();
 }
 
 async function readCatalog() {
@@ -99,6 +114,7 @@ module.exports = {
   readCatalog,
   readSubjects,
   writeSubjects,
+  findOrphanedBooks,
   readBook,
   writeBook,
   bookExists,

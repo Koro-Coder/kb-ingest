@@ -51,20 +51,27 @@ async function listForQuestion(type, ref) {
 // Resolving is a delete, not a status change: once the question or its
 // solution is fixed, every report about it is answered at once, and a queue
 // that keeps resolved rows around stops being a to-do list. Irreversible.
+//
+// Returns the rows it removed, because the people who filed them have to be
+// told — which means reading them before they are gone.
 async function deleteForQuestion(type, ref) {
   const reports = await collection(COLLECTIONS.reports);
-  const result = await reports.deleteMany(questionFilter(type, ref));
-  return result.deletedCount;
+  const filter = questionFilter(type, ref);
+  const removed = (await reports.find(filter).toArray()).map(toReport);
+  await reports.deleteMany(filter);
+  return removed;
 }
 
 // Called when a video link appears for a question: the requests have been
 // answered, so they stop being outstanding demand.
+// Also returns what it removed, so the people who asked for those videos can
+// be told one is now available.
 async function deleteVideoRequestsFor(bookId, refs) {
   if (!refs.length) {
-    return 0;
+    return [];
   }
   const reports = await collection(COLLECTIONS.reports);
-  const result = await reports.deleteMany({
+  const filter = {
     type: 'video_request',
     bookId,
     $or: refs.map((r) => ({
@@ -72,8 +79,10 @@ async function deleteVideoRequestsFor(bookId, refs) {
       year: Number(r.year),
       questionNum: Number(r.questionNum)
     }))
-  });
-  return result.deletedCount;
+  };
+  const removed = (await reports.find(filter).toArray()).map(toReport);
+  await reports.deleteMany(filter);
+  return removed;
 }
 
 module.exports = {
